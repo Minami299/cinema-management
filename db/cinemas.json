@@ -1,0 +1,32 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90301",
+    "name": "CGV Vincom Nguyễn Chí Thanh",
+    "address": "Số 54A Nguyễn Chí Thanh, Láng Thượng, Đống Đa",
+    "city": "Hà Nội",
+    "phone": "02439743333",
+    "status": "Active",
+    "createdAt": "2026-01-15T02:00:00.000Z",
+    "updatedAt": "2026-01-15T02:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90302",
+    "name": "CGV Hùng Vương Plaza",
+    "address": "Tầng 7, Hùng Vương Plaza, 126 Hùng Vương, Quận 5",
+    "city": "TP.HCM",
+    "phone": "02839561888",
+    "status": "Active",
+    "createdAt": "2026-01-16T05:00:00.000Z",
+    "updatedAt": "2026-01-16T05:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90303",
+    "name": "BHD Star Cineplex Phạm Ngọc Thạch",
+    "address": "Tầng 8, Vincom Center, 2 Phạm Ngọc Thạch, Đống Đa",
+    "city": "Hà Nội",
+    "phone": "02436374071",
+    "status": "Maintenance",
+    "createdAt": "2026-02-10T08:00:00.000Z",
+    "updatedAt": "2026-06-15T10:00:00.000Z"
+  }
+]

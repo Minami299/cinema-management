@@ -1,0 +1,35 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90501",
+    "name": "Combo Bắp Nước Solo",
+    "description": "1 bắp lớn vị ngọt + 1 nước ngọt size L",
+    "price": 85000,
+    "type": "Combo",
+    "imageUrl": "https://image.server.com/foods/combo-solo.jpg",
+    "isAvailable": true,
+    "createdAt": "2026-01-20T04:00:00.000Z",
+    "updatedAt": "2026-01-20T04:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90502",
+    "name": "Bắp Rang Bơ Vị Phô Mai",
+    "description": "Bắp rang bơ thơm lừng phủ bột phô mai hảo hạng",
+    "price": 60000,
+    "type": "Food",
+    "imageUrl": "https://image.server.com/foods/popcorn-cheese.jpg",
+    "isAvailable": true,
+    "createdAt": "2026-01-20T04:10:00.000Z",
+    "updatedAt": "2026-01-20T04:10:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90503",
+    "name": "Nước Suối Tự Nhiên",
+    "description": "Chai nước khoáng tinh khiết 500ml",
+    "price": 25000,
+    "type": "Drink",
+    "imageUrl": "https://image.server.com/foods/water.jpg",
+    "isAvailable": true,
+    "createdAt": "2026-01-20T04:15:00.000Z",
+    "updatedAt": "2026-01-20T04:15:00.000Z"
+  }
+]

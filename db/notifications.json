@@ -1,0 +1,20 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90801",
+    "userId": "65f1a2b3c4d5e6f7a8b90201",
+    "title": "Đặt vé thành công 🎉",
+    "message": "Cảm ơn bạn đã đặt vé phim 'Chuyến Đi Bão Táp'. Mã hóa đơn của bạn là 65f1a2b3c4d5e6f7a8b90701.",
+    "isRead": true,
+    "createdAt": "2026-06-17T13:35:05.000Z",
+    "updatedAt": "2026-06-17T13:36:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90802",
+    "userId": "65f1a2b3c4d5e6f7a8b90202",
+    "title": "Đặt vé thành công 🎉",
+    "message": "Cảm ơn bạn đã đặt vé phim 'Chuyến Đi Bão Táp'. Mã hóa đơn của bạn là 65f1a2b3c4d5e6f7a8b90702.",
+    "isRead": false,
+    "createdAt": "2026-06-17T14:02:05.000Z",
+    "updatedAt": "2026-06-17T14:02:05.000Z"
+  }
+]
