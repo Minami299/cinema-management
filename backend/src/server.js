@@ -1,13 +1,23 @@
-require("dotenv").config(); // Vẫn để trên đầu, tự động tìm file .env ở thư mục gốc
+require("dotenv").config();
 
 const express = require("express");
-const connectDB = require("./config/db"); // Đường dẫn tương đối tính từ src/server.js
-const router = require("./routers/index"); // ĐÃ SỬA: Bỏ chữ "src/" đi vì bạn đang ở trong src rồi
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
+const router = require("./routers/index");
 
 const app = express();
 connectDB();
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  }),
+);
+
 app.use("/api", router);
 
 const PORT = process.env.PORT || 9999;
