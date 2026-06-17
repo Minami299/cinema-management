@@ -1,0 +1,62 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90200",
+    "name": "Trần Admin",
+    "email": "admin@cinema.com",
+    "password": "$2b$10$adm...hashedpassword...",
+    "phone": "0900000001",
+    "role": "65f1a2b3c4d5e6f7a8b90101",
+    "isActive": true,
+    "favorites": [],
+    "createdAt": "2026-01-11T00:00:00.000Z",
+    "updatedAt": "2026-01-11T00:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90203",
+    "name": "Lê Quản Lý",
+    "email": "lequanly@cinema.com",
+    "password": "$2b$10$mgr...hashedpassword...",
+    "phone": "0909090909",
+    "role": "65f1a2b3c4d5e6f7a8b90102",
+    "isActive": true,
+    "favorites": [],
+    "createdAt": "2026-01-20T03:00:00.000Z",
+    "updatedAt": "2026-01-20T03:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90204",
+    "name": "Phạm Nhân Viên",
+    "email": "phamnhanvien@cinema.com",
+    "password": "$2b$10$stf...hashedpassword...",
+    "phone": "0955555555",
+    "role": "65f1a2b3c4d5e6f7a8b90103",
+    "isActive": true,
+    "favorites": [],
+    "createdAt": "2026-02-01T07:00:00.000Z",
+    "updatedAt": "2026-02-01T07:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90201",
+    "name": "Nguyễn Văn A",
+    "email": "nguyenvana@gmail.com",
+    "password": "$2b$10$xyz...hashedpassword...",
+    "phone": "0912345678",
+    "role": "65f1a2b3c4d5e6f7a8b90104",
+    "isActive": true,
+    "favorites": ["65f1a2b3c4d5e6f7a8b90401", "65f1a2b3c4d5e6f7a8b90402"],
+    "createdAt": "2026-02-15T09:30:00.000Z",
+    "updatedAt": "2026-02-15T09:30:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90202",
+    "name": "Trần Thị B",
+    "email": "tranthib@gmail.com",
+    "password": "$2b$10$abc...hashedpassword...",
+    "phone": "0987654321",
+    "role": "65f1a2b3c4d5e6f7a8b90104",
+    "isActive": true,
+    "favorites": ["65f1a2b3c4d5e6f7a8b90403"],
+    "createdAt": "2026-03-01T10:15:00.000Z",
+    "updatedAt": "2026-03-01T10:15:00.000Z"
+  }
+]

@@ -2,14 +2,24 @@ const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema(
   {
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }, // Mật khẩu đã mã hóa (bcrypt)
-    fullName: { type: String, required: true },
+    name: { type: String, required: true },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    password: { type: String, required: true },
     phone: { type: String },
-    role: { type: mongoose.Schema.Types.ObjectId, ref: "Role", required: true }, // Tham chiếu Roles
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Role",
+      required: true,
+    },
     isActive: { type: Boolean, default: true },
-    pictureProfile: { type: String }, // URL ảnh hồ sơ cá nhân
-    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Movie" }], // Nhúng trực tiếp mảng phim yêu thích
+    // Nhúng trực tiếp mảng Object ID các bộ phim yêu thích để tăng tốc độ truy vấn
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Movie" }],
   },
   { timestamps: true },
 );

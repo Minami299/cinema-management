@@ -1,0 +1,64 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90701",
+    "user": "65f1a2b3c4d5e6f7a8b90201",
+    "showtime": "65f1a2b3c4d5e6f7a8b90601",
+    "tickets": [
+      { "seatNumber": "A1", "price": 90000 }
+    ],
+    "foods": [
+      { "foodItem": "65f1a2b3c4d5e6f7a8b90501", "quantity": 1, "price": 85000 }
+    ],
+    "payment": {
+      "paymentMethod": "VNPAY",
+      "transactionId": "VNPAY123456789",
+      "amount": 175000,
+      "status": "Completed",
+      "paidAt": "2026-06-17T13:35:00.000Z"
+    },
+    "totalAmount": 175000,
+    "status": "Confirmed",
+    "createdAt": "2026-06-17T13:30:00.000Z",
+    "updatedAt": "2026-06-17T13:35:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90702",
+    "user": "65f1a2b3c4d5e6f7a8b90202",
+    "showtime": "65f1a2b3c4d5e6f7a8b90601",
+    "tickets": [
+      { "seatNumber": "C1", "price": 90000 }
+    ],
+    "foods": [],
+    "payment": {
+      "paymentMethod": "MOMO",
+      "transactionId": "MOMO987654321",
+      "amount": 90000,
+      "status": "Completed",
+      "paidAt": "2026-06-17T14:02:00.000Z"
+    },
+    "totalAmount": 90000,
+    "status": "Confirmed",
+    "createdAt": "2026-06-17T14:00:00.000Z",
+    "updatedAt": "2026-06-17T14:02:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90703",
+    "user": "65f1a2b3c4d5e6f7a8b90201",
+    "showtime": "65f1a2b3c4d5e6f7a8b90602",
+    "tickets": [
+      { "seatNumber": "A1", "price": 85000 }
+    ],
+    "foods": [
+      { "foodItem": "65f1a2b3c4d5e6f7a8b90503", "quantity": 2, "price": 25000 }
+    ],
+    "payment": {
+      "paymentMethod": "CASH",
+      "amount": 135000,
+      "status": "Pending"
+    },
+    "totalAmount": 135000,
+    "status": "Pending",
+    "createdAt": "2026-06-17T18:00:00.000Z",
+    "updatedAt": "2026-06-17T18:00:00.000Z"
+  }
+]

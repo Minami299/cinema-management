@@ -2,9 +2,14 @@ const mongoose = require("mongoose");
 
 const RoleSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, unique: true }, // ADMIN, STAFF, CUSTOMER, MANAGER
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      enum: ["ADMIN", "MANAGER", "STAFF", "CUSTOMER"],
+    },
     description: { type: String },
-    permissions: [{ type: String }], // Ví dụ: ['MANAGE_MOVIES', 'BOOK_TICKETS', 'VIEW_REPORTS']
+    permissions: [{ type: String }], // Danh sách các mã quyền, ví dụ: 'CREATE_MOVIE', 'BOOK_TICKET'
   },
   { timestamps: true },
 );

@@ -1,0 +1,49 @@
+[
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90351",
+    "name": "Phòng Chiếu 1 (IMAX)",
+    "cinema": "65f1a2b3c4d5e6f7a8b90301",
+    "type": "IMAX",
+    "totalSeats": 6,
+    "seats": [
+      { "seatNumber": "A1", "type": "Standard", "row": "A", "col": 1 },
+      { "seatNumber": "A2", "type": "Standard", "row": "A", "col": 2 },
+      { "seatNumber": "B1", "type": "VIP", "row": "B", "col": 1 },
+      { "seatNumber": "B2", "type": "VIP", "row": "B", "col": 2 },
+      { "seatNumber": "C1", "type": "Sweetbox", "row": "C", "col": 1 },
+      { "seatNumber": "C2", "type": "Sweetbox", "row": "C", "col": 2 }
+    ],
+    "createdAt": "2026-01-15T03:00:00.000Z",
+    "updatedAt": "2026-01-15T03:00:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90352",
+    "name": "Phòng Chiếu 2 (2D)",
+    "cinema": "65f1a2b3c4d5e6f7a8b90301",
+    "type": "2D",
+    "totalSeats": 4,
+    "seats": [
+      { "seatNumber": "A1", "type": "Standard", "row": "A", "col": 1 },
+      { "seatNumber": "A2", "type": "Standard", "row": "A", "col": 2 },
+      { "seatNumber": "B1", "type": "Standard", "row": "B", "col": 1 },
+      { "seatNumber": "B2", "type": "Standard", "row": "B", "col": 2 }
+    ],
+    "createdAt": "2026-01-15T03:15:00.000Z",
+    "updatedAt": "2026-01-15T03:15:00.000Z"
+  },
+  {
+    "_id": "65f1a2b3c4d5e6f7a8b90353",
+    "name": "Phòng Chiếu Gold Class",
+    "cinema": "65f1a2b3c4d5e6f7a8b90302",
+    "type": "4XD",
+    "totalSeats": 4,
+    "seats": [
+      { "seatNumber": "A1", "type": "VIP", "row": "A", "col": 1 },
+      { "seatNumber": "A2", "type": "VIP", "row": "A", "col": 2 },
+      { "seatNumber": "B1", "type": "VIP", "row": "B", "col": 1 },
+      { "seatNumber": "B2", "type": "VIP", "row": "B", "col": 2 }
+    ],
+    "createdAt": "2026-01-16T06:00:00.000Z",
+    "updatedAt": "2026-01-16T06:00:00.000Z"
+  }
+]

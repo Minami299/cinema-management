@@ -1,60 +1,58 @@
 const mongoose = require("mongoose");
 
-// Chi tiết vé ghế đã đặt
-const TicketDetailSchema = new mongoose.Schema(
-  {
-    seatNumber: { type: String, required: true },
-    seatType: { type: String, required: true },
-    price: { type: Number, required: true },
-  },
-  { _id: false },
-);
+// Chi tiết các ghế được đặt trong hóa đơn này
+const TicketDetailSchema = new mongoose.Schema({
+  seatNumber: { type: String, required: true },
+  price: { type: Number, required: true },
+});
 
-// Chi tiết đồ ăn kèm đã mua
-const FoodOrderDetailSchema = new mongoose.Schema(
-  {
-    foodItemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "FoodItem",
-      required: true,
-    },
-    name: { type: String, required: true },
-    quantity: { type: Number, required: true },
-    price: { type: Number, required: true }, // Lưu giá tại thời điểm mua thực tế
+// Chi tiết đồ ăn thức uống kèm theo
+const FoodOrderSchema = new mongoose.Schema({
+  foodItem: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FoodItem",
+    required: true,
   },
-  { _id: false },
-);
+  quantity: { type: Number, required: true, min: 1 },
+  price: { type: Number, required: true }, // Giá tại thời điểm mua
+});
+
+// Thông tin chi tiết về giao dịch thanh toán
+const PaymentSchema = new mongoose.Schema({
+  paymentMethod: {
+    type: String,
+    enum: ["VNPAY", "MOMO", "CASH"],
+    required: true,
+  },
+  transactionId: { type: String }, // Mã giao dịch từ cổng thanh toán
+  amount: { type: Number, required: true },
+  status: {
+    type: String,
+    enum: ["Pending", "Completed", "Failed"],
+    default: "Pending",
+  },
+  paidAt: { type: Date },
+});
 
 const BookingSchema = new mongoose.Schema(
   {
-    bookingCode: { type: String, required: true, unique: true }, // Mã đặt vé sinh ngẫu nhiên
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    showtimeId: {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    showtime: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Showtime",
       required: true,
     },
-    tickets: [TicketDetailSchema], // DANH SÁCH GHẾ ĐẶT (Nhúng trực tiếp)
-    foodOrders: [FoodOrderDetailSchema], // DANH SÁCH ĐỒ ĂN ĐÍNH KÈM (Nhúng trực tiếp)
-    totalPrice: { type: Number, required: true }, // Tổng tiền cuối cùng sau khi tính toán
+    tickets: [TicketDetailSchema], // Nhúng chi tiết vé ghế ngồi
+    foods: [FoodOrderSchema], // Nhúng chi tiết đồ ăn kèm theo (F&B)
+    payment: PaymentSchema, // Nhúng trạng thái và thông tin giao dịch thanh toán
+    totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["Pending", "Paid", "Cancelled"],
+      enum: ["Pending", "Confirmed", "Cancelled"],
       default: "Pending",
-    },
-    payment: {
-      // THÔNG TIN THANH TOÁN TÍCH HỢP (Nhúng trực tiếp)
-      transactionId: { type: String }, // Mã giao dịch từ cổng thanh toán (VNPay/Momo)
-      paymentMethod: { type: String }, // Ví dụ: 'VNPAY', 'MOMO', 'COUNTER_CASH'
-      paidAt: { type: Date },
     },
   },
   { timestamps: true },
 );
 
 module.exports = mongoose.model("Booking", BookingSchema);
-s;
