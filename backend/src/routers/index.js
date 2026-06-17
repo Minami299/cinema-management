@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 // Import các router con độc lập
+const authRouter = require("./authRouter");
 const movieRouter = require("./movieRouter");
 const bookingRouter = require("./bookingRoutes");
 const cinemaRouter = require("./cinemaRouter");
@@ -13,6 +14,7 @@ const notificationRouter = require("./notificationRouter");
 const showtimeRouter = require("./showtimeRoutes");
 
 // Đăng ký các tuyến đường (routes)
+router.use("/auth", authRouter);
 router.use("/movies", movieRouter);
 router.use("/bookings", bookingRouter);
 router.use("/cinemas", cinemaRouter);
