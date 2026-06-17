@@ -19,7 +19,7 @@ const RegisterPage = () => {
 
     try {
       await register({ name, email, password, phone });
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Đăng ký thất bại.");
     } finally {
