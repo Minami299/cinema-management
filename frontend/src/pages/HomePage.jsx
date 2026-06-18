@@ -21,6 +21,7 @@ const HomePage = () => {
         const res = await movieApi.getAll();
         setMovies(res.data.data || []);
       } catch (error) {
+        console.error("Error fetching movies:", error);
         setLoadError("Không thể tải danh sách phim từ hệ thống.");
       } finally {
         setLoadingMovies(false);
