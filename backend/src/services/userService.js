@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 class UserService {
   async createUser(userData) {
     try {
-      // Hash mật khẩu
       const salt = await bcrypt.genSalt(10);
       userData.password = await bcrypt.hash(userData.password, salt);
 
@@ -44,13 +43,11 @@ class UserService {
     const user = await User.findById(id);
     if (!user) throw new Error("Người dùng không tồn tại.");
 
-    // Kiểm tra mật khẩu cũ
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
       throw new Error("Mật khẩu cũ không chính xác.");
     }
 
-    // Hash mật khẩu mới
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     return await user.save();
@@ -64,7 +61,7 @@ class UserService {
     return await User.findByIdAndUpdate(
       userId,
       { $addToSet: { favorites: movieId } },
-      { new: true },
+      { new: true }
     ).populate("favorites");
   }
 
@@ -72,7 +69,7 @@ class UserService {
     return await User.findByIdAndUpdate(
       userId,
       { $pull: { favorites: movieId } },
-      { new: true },
+      { new: true }
     ).populate("favorites");
   }
 

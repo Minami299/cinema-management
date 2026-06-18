@@ -15,7 +15,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: "15m" },
+    { expiresIn: "15m" }
   );
 };
 
@@ -23,7 +23,7 @@ const generateRefreshToken = (user) => {
   return jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "7d" },
+    { expiresIn: "7d" }
   );
 };
 
@@ -70,6 +70,9 @@ class AuthController {
       });
       await newUser.save();
 
+      // Ánh xạ role ngay sau khi tạo để trả về đầy đủ thông tin chữ
+      await newUser.populate("role");
+
       const accessToken = generateAccessToken(newUser);
       const refreshToken = generateRefreshToken(newUser);
 
@@ -79,9 +82,11 @@ class AuthController {
         success: true,
         data: {
           user: {
+            _id: newUser._id,
             id: newUser._id,
             name: newUser.name,
             email: newUser.email,
+            phone: newUser.phone,
             role: newUser.role,
           },
           accessToken,
@@ -102,7 +107,9 @@ class AuthController {
         });
       }
 
-      const user = await User.findOne({ email });
+      // Ánh xạ role để lấy tên hiển thị của phân quyền
+      const user = await User.findOne({ email }).populate("role");
+      
       if (!user) {
         return res
           .status(401)
@@ -125,9 +132,11 @@ class AuthController {
         success: true,
         data: {
           user: {
+            _id: user._id,
             id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             role: user.role,
           },
           accessToken,
@@ -154,7 +163,7 @@ class AuthController {
           .json({ success: false, message: "Refresh token không tồn tại." });
       }
 
-      // Thay thế callback thành giải mã đồng bộ trực tiếp trong khối try...catch
+      // Giải mã đồng bộ trực tiếp trong khối try...catch
       const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
       const user = await User.findById(decoded.id);
@@ -192,20 +201,26 @@ class AuthController {
           .json({ success: false, message: "Unauthorized." });
       }
 
-      // Truy vấn đúng lúc, đúng chỗ
-      const user = await User.findById(req.user.id).select("-password");
+      // Ánh xạ role để lấy tên hiển thị của phân quyền thay vì chuỗi ID
+      const user = await User.findById(req.user.id)
+        .select("-password")
+        .populate("role");
+
       if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "Người dùng không tồn tại." });
       }
 
+      // Trả về đầy đủ các trường, bao gồm _id và phone
       res.status(200).json({
         success: true,
         data: {
-          id: user._id,
+          _id: user._id,
+          id: user._id, 
           name: user.name,
           email: user.email,
+          phone: user.phone, 
           role: user.role,
         },
       });

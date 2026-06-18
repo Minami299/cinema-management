@@ -14,9 +14,7 @@ class UserController {
     try {
       const user = await userService.getUserById(req.params.id);
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Người dùng không tồn tại." });
+        return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
       }
       res.status(200).json({ success: true, data: user });
     } catch (error) {
@@ -28,9 +26,7 @@ class UserController {
     try {
       const user = await userService.getUserByEmail(req.params.email);
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Người dùng không tồn tại." });
+        return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
       }
       res.status(200).json({ success: true, data: user });
     } catch (error) {
@@ -42,9 +38,7 @@ class UserController {
     try {
       const user = await userService.updateUser(req.params.id, req.body);
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Người dùng không tồn tại." });
+        return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
       }
       res.status(200).json({ success: true, data: user });
     } catch (error) {
@@ -56,9 +50,7 @@ class UserController {
     try {
       const { oldPassword, newPassword } = req.body;
       await userService.updatePassword(req.params.id, oldPassword, newPassword);
-      res
-        .status(200)
-        .json({ success: true, message: "Cập nhật mật khẩu thành công." });
+      res.status(200).json({ success: true, message: "Cập nhật mật khẩu thành công." });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
     }
@@ -68,13 +60,9 @@ class UserController {
     try {
       const user = await userService.deleteUser(req.params.id);
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Người dùng không tồn tại." });
+        return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
       }
-      res
-        .status(200)
-        .json({ success: true, message: "Xóa người dùng thành công." });
+      res.status(200).json({ success: true, message: "Xóa người dùng thành công." });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -82,10 +70,7 @@ class UserController {
 
   async addFavorite(req, res) {
     try {
-      const user = await userService.addFavoriteMovie(
-        req.params.id,
-        req.body.movieId,
-      );
+      const user = await userService.addFavoriteMovie(req.params.id, req.body.movieId);
       res.status(200).json({ success: true, data: user });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
@@ -94,10 +79,7 @@ class UserController {
 
   async removeFavorite(req, res) {
     try {
-      const user = await userService.removeFavoriteMovie(
-        req.params.id,
-        req.body.movieId,
-      );
+      const user = await userService.removeFavoriteMovie(req.params.id, req.body.movieId);
       res.status(200).json({ success: true, data: user });
     } catch (error) {
       res.status(400).json({ success: false, message: error.message });
