@@ -61,15 +61,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authApi.logout();
+    // Nếu có lỗi ở authApi.logout() thì bạn có thể bỏ dòng await này đi
+    await authApi.logout(); 
     setUser(null);
     setAccessToken(null);
     updateAuthorizationHeader(null);
   };
 
+  // 🔴 ĐÂY LÀ HÀM MỚI BỔ SUNG ĐỂ TRỊ BỆNH KHÔNG LƯU STATE
+  const updateUser = (updatedData) => {
+    setUser((prevUser) => ({ ...prevUser, ...updatedData }));
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, loading, login, register, logout }}
+      // 🔴 BỔ SUNG updateUser VÀO DANH SÁCH VALUE
+      value={{ user, accessToken, loading, login, register, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>
