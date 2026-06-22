@@ -3,71 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "./ProfilePage.css";
 
-/* ─── MOCK DATA ──────────────────────────────────────────────── */
-const MOCK_BOOKINGS = [
-  {
-    id: "b1",
-    movie: "Echoes of Tomorrow",
-    cinema: "CinemaHub Central",
-    date: "June 15, 2026",
-    time: "7:15 PM",
-    seats: "D5, D6",
-    total: "300,000 VND",
-    status: "completed",
-    poster: "https://image.tmdb.org/t/p/w200/1BIoJGKbXjdFDAqUEiA2VHqkJVt.jpg",
-  },
-  {
-    id: "b2",
-    movie: "Nebula Chronicles",
-    cinema: "CinemaHub Downtown",
-    date: "June 8, 2026",
-    time: "5:30 PM",
-    seats: "F8",
-    total: "150,000 VND",
-    status: "completed",
-    poster: "https://image.tmdb.org/t/p/w200/9cqNxx0GxF0bAY082W5sxxASe4D.jpg",
-  },
-  {
-    id: "b3",
-    movie: "Quest for Glory",
-    cinema: "CinemaHub Westside",
-    date: "May 22, 2026",
-    time: "8:00 PM",
-    seats: "A1, A2, A3",
-    total: "450,000 VND",
-    status: "completed",
-    poster: "https://image.tmdb.org/t/p/w200/aJTZdaUOaVRxRmQHOPl8UOb0R9E.jpg",
-  },
-];
-
-const MOCK_FAVORITES = [
-  {
-    id: "f1",
-    title: "Echoes of Tomorrow",
-    rating: 8.5,
-    poster: "https://image.tmdb.org/t/p/w300/1BIoJGKbXjdFDAqUEiA2VHqkJVt.jpg",
-  },
-  {
-    id: "f2",
-    title: "Quest for Glory",
-    rating: 8.7,
-    poster: "https://image.tmdb.org/t/p/w300/aJTZdaUOaVRxRmQHOPl8UOb0R9E.jpg",
-  },
-  {
-    id: "f3",
-    title: "Nebula Chronicles",
-    rating: 7.8,
-    poster: "https://image.tmdb.org/t/p/w300/9cqNxx0GxF0bAY082W5sxxASe4D.jpg",
-  },
-  {
-    id: "f4",
-    title: "The Last Stand",
-    rating: 8.1,
-    poster: "https://image.tmdb.org/t/p/w300/hS5SThLEjUfPwl1JJKwJ6OYXVFQ.jpg",
-  },
-];
-/* ───────────────────────────────────────────────────────────── */
-
 const TIER_CONFIG = {
   bronze: {
     label: "Bronze Member",
@@ -110,6 +45,10 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // 1. Khai báo state lưu danh sách phim thực tế từ MongoDB
+  const [favorites, setFavorites] = useState([]);
+  const [isLoadingFav, setIsLoadingFav] = useState(false);
+
   const rewardPoints = 2450;
   const tier = getTier(rewardPoints);
   const tierConfig = TIER_CONFIG[tier];
@@ -129,6 +68,7 @@ const ProfilePage = () => {
   });
   const [errors, setErrors] = useState({});
 
+  // Khởi tạo thông tin người dùng từ Auth Context
   useEffect(() => {
     if (user) {
       const init = {
@@ -142,6 +82,35 @@ const ProfilePage = () => {
       setFormData({ name: init.name, email: init.email, phone: init.phone });
     }
   }, [user]);
+
+  // 2. Gọi API lấy danh sách yêu thích thực tế khi có mã người dùng (displayUser._id)
+  useEffect(() => {
+    if (!displayUser?._id) return;
+
+    const fetchFavorites = async () => {
+      setIsLoadingFav(true);
+      try {
+        // Đã sửa đường dẫn thành /api/users/... để đồng bộ với backend của bạn
+        const response = await fetch(
+          `http://localhost:9999/api/users/${displayUser._id}/favorites`,
+        );
+        const result = await response.json();
+
+        if (result.success) {
+          // Lưu mảng các bộ phim đã được populate (có trường poster) vào state
+          setFavorites(result.data);
+        } else {
+          console.error("Lỗi từ server:", result.message);
+        }
+      } catch (error) {
+        console.error("Lỗi kết nối API favorites:", error.message);
+      } finally {
+        setIsLoadingFav(false);
+      }
+    };
+
+    fetchFavorites();
+  }, [displayUser?._id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -157,14 +126,14 @@ const ProfilePage = () => {
 
   const validateProfile = () => {
     const errs = {};
-    if (!formData.name.trim()) errs.name = "Ten khong duoc de trong!";
+    if (!formData.name.trim()) errs.name = "Tên không được để trống!";
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) errs.email = "Email khong duoc de trong!";
+    if (!formData.email.trim()) errs.email = "Email không được để trống!";
     else if (!emailRe.test(formData.email))
-      errs.email = "Dinh dang email khong hop le!";
+      errs.email = "Định dạng email không hợp lệ!";
     const phoneRe = /^(0[3|5|7|8|9])+([0-9]{8})\b/;
     if (formData.phone && !phoneRe.test(formData.phone))
-      errs.phone = "So dien thoai gom 10 so, bat dau bang 03/05/07/08/09!";
+      errs.phone = "Số điện thoại gồm 10 số, bắt đầu bằng 03/05/07/08/09!";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -172,13 +141,13 @@ const ProfilePage = () => {
   const validatePassword = () => {
     const errs = {};
     if (!passwordData.oldPassword)
-      errs.oldPassword = "Vui long nhap mat khau cu!";
+      errs.oldPassword = "Vui lòng nhập mật khẩu cũ!";
     if (!passwordData.newPassword)
-      errs.newPassword = "Vui long nhap mat khau moi!";
+      errs.newPassword = "Vui lòng nhập mật khẩu mới!";
     else if (passwordData.newPassword.length < 6)
-      errs.newPassword = "Mat khau moi phai co it nhat 6 ky tu!";
+      errs.newPassword = "Mật khẩu mới phải có ít nhất 6 ký tự!";
     if (passwordData.newPassword !== passwordData.confirmPassword)
-      errs.confirmPassword = "Mat khau xac nhan khong khop!";
+      errs.confirmPassword = "Mật khẩu xác nhận không khớp!";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -200,7 +169,7 @@ const ProfilePage = () => {
         },
       );
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Co loi xay ra!");
+      if (!res.ok) throw new Error(result.message || "Có lỗi xảy ra!");
       const updated = result.data;
       localStorage.setItem("user", JSON.stringify(updated));
       setDisplayUser({
@@ -211,7 +180,7 @@ const ProfilePage = () => {
         createdAt: updated.createdAt || displayUser.createdAt,
       });
       if (typeof updateUser === "function") updateUser(updated);
-      alert("Cap nhat thong tin thanh cong!");
+      alert("Cập nhật thông tin thành công!");
       setIsEditing(false);
     } catch (e) {
       alert(e.message);
@@ -238,8 +207,8 @@ const ProfilePage = () => {
         },
       );
       const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Doi mat khau that bai!");
-      alert("Doi mat khau thanh cong!");
+      if (!res.ok) throw new Error(result.message || "Đổi mật khẩu thất bại!");
+      alert("Đổi mật khẩu thành công!");
       setIsChangingPassword(false);
       setPasswordData({
         oldPassword: "",
@@ -268,7 +237,7 @@ const ProfilePage = () => {
   };
 
   const handleLogout = () => {
-    if (window.confirm("Ban co chac chan muon dang xuat khong?")) logout();
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) logout();
   };
 
   const initials = displayUser.name
@@ -483,22 +452,44 @@ const ProfilePage = () => {
         {/* Tab Content */}
         {activeTab === "booking" && (
           <div className="pp-tab-content">
-            {MOCK_BOOKINGS.map((b) => (
-              <div className="pp-booking-card" key={b.id}>
-                <img
-                  className="pp-booking-poster"
-                  src={b.poster}
-                  alt={b.movie}
-                  onError={(e) => {
-                    e.target.style.background = "#1e1e24";
-                    e.target.src = "";
-                  }}
-                />
-                <div className="pp-booking-info">
-                  <div className="pp-booking-top">
-                    <div>
-                      <h3 className="pp-booking-title">{b.movie}</h3>
-                      <p className="pp-booking-cinema">
+            {/* Nếu bạn có state hoặc dữ liệu cho MOCK_BOOKINGS thì map ở đây */}
+            {typeof MOCK_BOOKINGS !== "undefined" &&
+              MOCK_BOOKINGS.map((b) => (
+                <div className="pp-booking-card" key={b.id}>
+                  <img
+                    className="pp-booking-poster"
+                    src={b.poster}
+                    alt={b.movie}
+                    onError={(e) => {
+                      e.target.style.background = "#1e1e24";
+                      e.target.src = "";
+                    }}
+                  />
+                  <div className="pp-booking-info">
+                    <div className="pp-booking-top">
+                      <div>
+                        <h3 className="pp-booking-title">{b.movie}</h3>
+                        <p className="pp-booking-cinema">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          {b.cinema}
+                        </p>
+                      </div>
+                      <span className="pp-status-badge pp-status-badge--completed">
+                        {b.status}
+                      </span>
+                    </div>
+                    <div className="pp-booking-meta">
+                      <span className="pp-meta-item">
                         <svg
                           width="13"
                           height="13"
@@ -507,101 +498,85 @@ const ProfilePage = () => {
                           stroke="currentColor"
                           strokeWidth="2"
                         >
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                          <circle cx="12" cy="10" r="3" />
+                          <rect x="3" y="4" width="18" height="18" rx="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
-                        {b.cinema}
-                      </p>
+                        {b.date}
+                      </span>
+                      <span className="pp-meta-item">
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        {b.time}
+                      </span>
+                      <span className="pp-meta-item">
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect x="3" y="11" width="18" height="11" rx="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                        Seats: {b.seats}
+                      </span>
                     </div>
-                    <span className="pp-status-badge pp-status-badge--completed">
-                      {b.status}
-                    </span>
-                  </div>
-                  <div className="pp-booking-meta">
-                    <span className="pp-meta-item">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      {b.date}
-                    </span>
-                    <span className="pp-meta-item">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      {b.time}
-                    </span>
-                    <span className="pp-meta-item">
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <rect x="3" y="11" width="18" height="11" rx="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      Seats: {b.seats}
-                    </span>
-                  </div>
-                  <div className="pp-booking-footer">
-                    <span className="pp-booking-total">Total: {b.total}</span>
-                    <button className="pp-view-ticket-btn">View Ticket</button>
+                    <div className="pp-booking-footer">
+                      <span className="pp-booking-total">Total: {b.total}</span>
+                      <button className="pp-view-ticket-btn">
+                        View Ticket
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
 
+        {/* DANH SÁCH FAVORITES ĐÃ ĐƯỢC ĐỒNG BỘ ĐỌC TRƯỜNG POSTER */}
         {activeTab === "favorites" && (
           <div className="pp-favorites-grid">
-            {MOCK_FAVORITES.map((f) => (
-              <div className="pp-fav-card" key={f.id}>
-                <div className="pp-fav-poster-wrap">
-                  <img
-                    className="pp-fav-poster"
-                    src={f.poster}
-                    alt={f.title}
-                    onError={(e) => {
-                      e.target.style.background = "#1e1e24";
-                    }}
-                  />
-                  <span className="pp-fav-rating">
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="#ffb400"
-                      stroke="none"
-                    >
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                    {f.rating}
-                  </span>
+            {isLoadingFav ? (
+              <p className="pp-loading-text">Đang tải danh sách yêu thích...</p>
+            ) : favorites.length === 0 ? (
+              <p className="pp-empty-text">Danh sách phim yêu thích trống.</p>
+            ) : (
+              favorites.map((movie) => (
+                <div className="pp-fav-card" key={movie._id}>
+                  <div className="pp-fav-poster-wrap">
+                    <img
+                      className="pp-fav-poster"
+                      // Đọc chính xác trường .poster từ MongoDB trả về
+                      src={movie.poster || "placeholder-image-url.png"}
+                      alt={movie.title}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.background = "#1e1e24";
+                      }}
+                    />
+                    {movie.duration && (
+                      <span className="pp-fav-duration">
+                        {movie.duration} phút
+                      </span>
+                    )}
+                  </div>
+                  <p className="pp-fav-title">{movie.title}</p>
                 </div>
-                <p className="pp-fav-title">{f.title}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 

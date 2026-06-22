@@ -20,7 +20,8 @@ class UserService {
   async getUserById(id) {
     return await User.findById(id)
       .populate("role")
-      .populate("favorites", "title imageUrl duration");
+      // SỬA TẠI ĐÂY: Đổi "imageUrl" thành "poster"
+      .populate("favorites", "title poster duration");
   }
 
   async getUserByEmail(email) {
@@ -61,7 +62,7 @@ class UserService {
     return await User.findByIdAndUpdate(
       userId,
       { $addToSet: { favorites: movieId } },
-      { new: true }
+      { new: true },
     ).populate("favorites");
   }
 
@@ -69,7 +70,7 @@ class UserService {
     return await User.findByIdAndUpdate(
       userId,
       { $pull: { favorites: movieId } },
-      { new: true }
+      { new: true },
     ).populate("favorites");
   }
 
