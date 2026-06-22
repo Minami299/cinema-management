@@ -2,27 +2,45 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { movieApi } from "../services/movieService";
+import "./HomePage.css";
+
+const formatDateString = (dateStr) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+// Slide mặc định khi chưa có dữ liệu từ API
+const defaultSlides = [
+  {
+    title: "Welcome to CinemaHub",
+    description: "Experience the best movies in comfort and style",
+    image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1400&q=80",
+    movieId: null,
+  },
+];
 
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
-  const [loadError, setLoadError] = useState("");
-
-  // State cho tính năng Quick Booking 3 bước
-  const [bookingStep, setBookingStep] = useState(1);
-  const [selectedMovie, setSelectedMovie] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
+        setLoadingMovies(true);
         const res = await movieApi.getAll();
-        setMovies(res.data.data || []);
+        if (res.data && res.data.success) {
+          setMovies(res.data.data || []);
+        }
       } catch (error) {
         console.error("Error fetching movies:", error);
-        setLoadError("Không thể tải danh sách phim từ hệ thống.");
       } finally {
         setLoadingMovies(false);
       }
@@ -30,705 +48,350 @@ const HomePage = () => {
     fetchMovies();
   }, []);
 
-  const handleNextStep = () => {
-    if (bookingStep === 1 && !selectedMovie)
-      return alert("Vui lòng chọn phim!");
-    if (bookingStep === 2 && !selectedTime)
-      return alert("Vui lòng chọn suất chiếu!");
-    setBookingStep((prev) => prev + 1);
+  // Xây dựng danh sách slide từ các phim Now Showing có bannerUrl
+  const nowShowingMovies = movies.filter((m) => m.status === "Now Showing");
+  const comingSoonMovies = movies.filter((m) => m.status === "Coming Soon");
+
+  const heroSlides =
+    nowShowingMovies.length > 0
+      ? nowShowingMovies.slice(0, 3).map((m) => ({
+          title: m.title,
+          description: m.synopsis || "",
+          image:
+            m.bannerUrl ||
+            m.posterUrl ||
+            "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1400&q=80",
+          movieId: m._id,
+        }))
+      : defaultSlides;
+
+  // Tự động chuyển slide mỗi 5 giây
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
+  const handlePrevSlide = () => {
+    setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
   };
 
-  const handleResetBooking = () => {
-    setBookingStep(1);
-    setSelectedMovie("");
-    setSelectedTime("");
+  const handleNextSlide = () => {
+    setActiveSlide((prev) => (prev + 1) % heroSlides.length);
   };
 
   return (
-    <div className="futuristic-minimal-ui">
-      {/* EMBEDDED FIGMA-STYLE CSS */}
-      <style>{`
-        :root {
-          --bg-clean: #ffffff;
-          --bg-subtle: #f8fafc;
-          --neon-cyan: #00f2fe;
-          --neon-magenta: #ff007f;
-          --text-main: #0f172a;
-          --text-muted: #64748b;
-          --border-color: #e2e8f0;
-          --font-geometric: 'Inter', system-ui, -apple-system, sans-serif;
-          --transition-figma: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .futuristic-minimal-ui {
-          background-color: var(--bg-clean);
-          color: var(--text-main);
-          font-family: var(--font-geometric);
-          min-height: 100vh;
-          scroll-behavior: smooth;
-          overflow-x: hidden;
-        }
-
-        /* LIGHT TRAILS ACCENTS */
-        .neon-trail-top {
-          position: fixed;
-          top: 0;
-          left: 25%;
-          width: 50%;
-          height: 2px;
-          background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-magenta), transparent);
-          z-index: 1001;
-          pointer-events: none;
-        }
-
-        /* SLIM HEADER */
-        .slim-navbar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          z-index: 1000;
-          background: rgba(255, 255, 255, 0.8);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(15, 23, 42, 0.04);
-        }
-
-        .nav-container {
-          max-width: 1300px;
-          margin: 0 auto;
-          padding: 14px 40px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .slim-logo {
-          font-size: 1.15rem;
-          font-weight: 800;
-          letter-spacing: 3px;
-          cursor: pointer;
-          color: var(--text-main);
-        }
-
-        .slim-logo span {
-          font-weight: 300;
-          color: var(--text-muted);
-        }
-
-        .floating-menu {
-          display: flex;
-          gap: 40px;
-        }
-
-        .menu-link {
-          color: var(--text-muted);
-          text-decoration: none;
-          font-size: 0.85rem;
-          font-weight: 500;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          transition: var(--transition-figma);
-        }
-
-        .menu-link:hover {
-          color: var(--text-main);
-        }
-
-        .nav-icons {
-          display: flex;
-          align-items: center;
-          gap: 24px;
-        }
-
-        .icon-btn {
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 1.1rem;
-          color: var(--text-main);
-          transition: var(--transition-figma);
-          padding: 4px;
-        }
-
-        .icon-btn:hover {
-          transform: scale(1.05);
-          color: var(--neon-magenta);
-        }
-
-        /* SLEEK HERO SECTION */
-        .minimal-hero {
-          position: relative;
-          min-height: 85vh;
-          display: flex;
-          align-items: center;
-          padding: 120px 40px 60px;
-          max-width: 1300px;
-          margin: 0 auto;
-          gap: 60px;
-        }
-
-        .hero-info {
-          flex: 1.2;
-          max-width: 600px;
-        }
-
-        .hero-tag {
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 4px;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          margin-bottom: 20px;
-          display: block;
-        }
-
-        .hero-heading {
-          font-size: 3.5rem;
-          font-weight: 800;
-          line-height: 1.1;
-          letter-spacing: -1px;
-          margin-bottom: 24px;
-        }
-
-        .hero-heading span {
-          font-weight: 300;
-          font-style: italic;
-          color: var(--text-muted);
-        }
-
-        .hero-desc {
-          color: var(--text-muted);
-          font-size: 1rem;
-          line-height: 1.6;
-          margin-bottom: 40px;
-        }
-
-        .geometric-cta-group {
-          display: flex;
-          gap: 16px;
-        }
-
-        .btn-geo {
-          padding: 14px 32px;
-          font-size: 0.85rem;
-          font-weight: 600;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          border: 1px solid var(--text-main);
-          cursor: pointer;
-          transition: var(--transition-figma);
-          background: none;
-        }
-
-        .btn-geo-primary {
-          background: var(--text-main);
-          color: var(--bg-clean);
-        }
-
-        .btn-geo-primary:hover {
-          background: var(--bg-clean);
-          color: var(--text-main);
-          box-shadow: -4px -4px 0 var(--neon-cyan), 4px 4px 0 var(--neon-magenta);
-        }
-
-        .btn-geo-secondary:hover {
-          background: var(--bg-subtle);
-          border-color: var(--text-muted);
-        }
-
-        .hero-motion-poster {
-          flex: 0.8;
-          position: relative;
-          aspect-ratio: 16/10;
-          background: var(--bg-subtle);
-          border: 1px solid var(--border-color);
-          overflow: hidden;
-          transition: var(--transition-figma);
-        }
-
-        .hero-motion-poster img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          filter: grayscale(100%);
-          transition: var(--transition-figma);
-        }
-
-        .hero-motion-poster:hover {
-          box-shadow: 0 30px 60px rgba(0,0,0,0.06);
-          border-color: var(--neon-cyan);
-        }
-
-        .hero-motion-poster:hover img {
-          filter: grayscale(0%);
-          transform: scale(1.02);
-        }
-
-        /* 3-STEP QUICK BOOKING INTERFACE */
-        .booking-system-section {
-          background: var(--bg-subtle);
-          border-top: 1px solid var(--border-color);
-          border-bottom: 1px solid var(--border-color);
-          padding: 80px 40px;
-        }
-
-        .booking-wrapper {
-          max-width: 1200px;
-          margin: 0 auto;
-          background: var(--bg-clean);
-          border: 1px solid var(--border-color);
-          padding: 40px;
-          position: relative;
-        }
-
-        .booking-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 40px;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 20px;
-        }
-
-        .booking-steps-indicator {
-          display: flex;
-          gap: 32px;
-        }
-
-        .step-node {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .step-node.active {
-          color: var(--text-main);
-        }
-
-        .step-node.active .node-number {
-          background: var(--text-main);
-          color: var(--bg-clean);
-        }
-
-        .node-number {
-          width: 20px;
-          height: 20px;
-          border: 1px solid var(--border-color);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.75rem;
-        }
-
-        .booking-body {
-          min-height: 150px;
-        }
-
-        .form-select-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 16px;
-          animation: fadeIn 0.3s ease;
-        }
-
-        .geo-option-card {
-          border: 1px solid var(--border-color);
-          padding: 20px;
-          cursor: pointer;
-          text-align: center;
-          font-weight: 600;
-          font-size: 0.9rem;
-          transition: var(--transition-figma);
-        }
-
-        .geo-option-card:hover, .geo-option-card.selected {
-          border-color: var(--text-main);
-          background: var(--bg-subtle);
-        }
-
-        .geo-option-card.selected {
-          box-shadow: -3px 3px 0 var(--neon-cyan);
-        }
-
-        .booking-footer-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 16px;
-          margin-top: 40px;
-        }
-
-        /* NOW SHOWING GRID (UNADORNED HOVER REVEAL) */
-        .catalog-container {
-          max-width: 1300px;
-          margin: 0 auto;
-          padding: 100px 40px;
-        }
-
-        .section-title-minimal {
-          font-size: 1.75rem;
-          font-weight: 800;
-          letter-spacing: -0.5px;
-          margin-bottom: 48px;
-          text-transform: uppercase;
-        }
-
-        .unadorned-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-          gap: 40px;
-        }
-
-        .clean-movie-card {
-          position: relative;
-          aspect-ratio: 2/3;
-          overflow: hidden;
-          background: var(--bg-subtle);
-          border: 1px solid var(--border-color);
-          cursor: pointer;
-        }
-
-        .clean-movie-card img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          transition: var(--transition-figma);
-        }
-
-        .reveal-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(255, 255, 255, 0.96);
-          padding: 32px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          opacity: 0;
-          transition: var(--transition-figma);
-          transform: translateY(10px);
-          border: 2px solid var(--text-main);
-        }
-
-        .clean-movie-card:hover .reveal-overlay {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        .clean-movie-card:hover img {
-          transform: scale(1.05);
-        }
-
-        .reveal-title {
-          font-size: 1.3rem;
-          font-weight: 800;
-          line-height: 1.2;
-          margin-bottom: 8px;
-        }
-
-        .reveal-meta {
-          font-size: 0.8rem;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .btn-reveal-details {
-          width: 100%;
-          padding: 12px;
-          background: var(--text-main);
-          color: var(--bg-clean);
-          border: none;
-          font-size: 0.8rem;
-          font-weight: 600;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          cursor: pointer;
-        }
-
-        /* SLIM FOOTER */
-        .slim-footer {
-          border-top: 1px solid var(--border-color);
-          padding: 40px;
-          font-size: 0.8rem;
-          color: var(--text-muted);
-          max-width: 1300px;
-          margin: 0 auto;
-          display: flex;
-          justify-content: space-between;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
-
-      {/* NEON LIGHT TRAIL */}
-      <div className="neon-trail-top"></div>
-
+    <div className="cinemahub-home">
       {/* HEADER */}
-      <header className="slim-navbar">
-        <div className="nav-container">
-          <div className="slim-logo" onClick={() => navigate("/")}>
-            CINEMA<span>X</span>
+      <header className="premium-header">
+        <div className="header-container">
+          <div className="logo-box" onClick={() => navigate("/")}>
+            <div className="logo-icon-wrap">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z" />
+              </svg>
+            </div>
+            <div className="logo-text">
+              Cinema<span>Hub</span>
+            </div>
           </div>
 
-          <nav className="floating-menu">
-            <a href="#home" className="menu-link">
-              Home
-            </a>
-            <a href="#booking" className="menu-link">
-              Quick Book
-            </a>
-            <a href="#movies" className="menu-link">
-              Now Showing
-            </a>
+          <nav className="nav-menu">
+            <a href="/" className="nav-item-link active">Home</a>
+            <a href="#movies" className="nav-item-link">Movies</a>
+            <a href="#cinemas" className="nav-item-link">Cinemas</a>
+            <a href="#promotions" className="nav-item-link">Promotions</a>
+            <a href="#contact" className="nav-item-link">Contact</a>
           </nav>
 
-          <div className="nav-icons">
-            <button className="icon-btn" aria-label="Search">
-              🔍
-            </button>
+          <div className="header-actions">
             <button
-              className="icon-btn"
-              onClick={() => navigate(user ? "/profile" : "/login")}
-              aria-label="Account"
+              className="profile-action-btn"
+              onClick={() => navigate("/profile")}
+              title="Profile"
             >
-              👤
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </button>
+            <button className="login-action-btn" onClick={() => navigate("/login")}>
+              Login / Register
             </button>
           </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="minimal-hero" id="home">
-        <div className="hero-info">
-          <span className="hero-tag">Digital-First Theater</span>
-          <h1 className="hero-heading">
-            Experience Cinema <span>Reimagined.</span>
-          </h1>
-          <p className="hero-desc">
-            An ultra-clean interactive space designed for instantaneous booking,
-            immersive original content tracking, and premium seat customization.
-          </p>
-          <div className="geometric-cta-group">
-            <button
-              className="btn-geo btn-geo-primary"
-              onClick={() =>
-                document
-                  .getElementById("booking")
-                  .scrollIntoView({ behavior: "smooth" })
-              }
+      {/* HERO CAROUSEL */}
+      <section className="hero-carousel">
+        <div className="carousel-track">
+          {heroSlides.map((slide, idx) => (
+            <div
+              key={idx}
+              className={`carousel-slide ${idx === activeSlide ? "active" : ""}`}
             >
-              Quick Booking
-            </button>
-            <button className="btn-geo btn-geo-secondary">Explore</button>
-          </div>
-        </div>
-
-        <div className="hero-motion-poster">
-          <img
-            src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80"
-            alt="Futuristic Motion Frame"
-          />
-        </div>
-      </section>
-
-      {/* INTERACTIVE 3-STEP QUICK BOOKING COMPONENT */}
-      <section className="booking-system-section" id="booking">
-        <div className="booking-wrapper">
-          <div className="booking-header">
-            <h2
-              style={{
-                fontSize: "1.1rem",
-                fontWeight: 800,
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-              }}
-            >
-              ⚡ Instant Ticket Machine
-            </h2>
-            <div className="booking-steps-indicator">
-              <div className={`step-node ${bookingStep >= 1 ? "active" : ""}`}>
-                <span className="node-number">1</span> Movie
-              </div>
-              <div className={`step-node ${bookingStep >= 2 ? "active" : ""}`}>
-                <span className="node-number">2</span> Session
-              </div>
-              <div className={`step-node ${bookingStep >= 3 ? "active" : ""}`}>
-                <span className="node-number">3</span> Pay
+              <img src={slide.image} alt={slide.title} className="slide-bg-image" />
+              <div className="slide-overlay-gradient"></div>
+              <div className="slide-content-wrap">
+                <h1 className="slide-title">{slide.title}</h1>
+                <p className="slide-desc">{slide.description}</p>
+                <button
+                  className="btn-book-now"
+                  onClick={() =>
+                    slide.movieId ? navigate(`/movie/${slide.movieId}`) : null
+                  }
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z" />
+                  </svg>
+                  Book Tickets Now
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="booking-body">
-            {/* STEP 1: CHỌN PHIM */}
-            {bookingStep === 1 && (
-              <div className="form-select-grid">
-                {movies.map((movie) => (
-                  <div
-                    key={movie._id}
-                    className={`geo-option-card ${selectedMovie === movie.title ? "selected" : ""}`}
-                    onClick={() => setSelectedMovie(movie.title)}
-                  >
-                    {movie.title}
-                  </div>
-                ))}
-                {movies.length === 0 && (
-                  <p style={{ color: "var(--text-muted)" }}>
-                    Không tìm thấy phim có sẵn.
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* STEP 2: CHỌN SUẤT CHIẾU */}
-            {bookingStep === 2 && (
-              <div className="form-select-grid">
-                {[
-                  "09:30 AM",
-                  "13:15 PM",
-                  "16:45 PM",
-                  "20:00 PM",
-                  "22:30 PM",
-                ].map((time) => (
-                  <div
-                    key={time}
-                    className={`geo-option-card ${selectedTime === time ? "selected" : ""}`}
-                    onClick={() => setSelectedTime(time)}
-                  >
-                    {time}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* STEP 3: XÁC NHẬN THANH TOÁN */}
-            {bookingStep === 3 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "20px 0",
-                  animation: "fadeIn 0.3s ease",
-                }}
-              >
-                <h3 style={{ fontWeight: 700, marginBottom: "12px" }}>
-                  Ticket Invoice Summary
-                </h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-                  Phim: <strong>{selectedMovie}</strong> | Suất chiếu:{" "}
-                  <strong>{selectedTime}</strong>
-                </p>
-                <div
-                  style={{
-                    display: "inline-block",
-                    margin: "24px 0",
-                    height: "1px",
-                    width: "100px",
-                    background:
-                      "linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta))",
-                  }}
-                ></div>
-                <p
-                  style={{
-                    fontSize: "0.8rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "1px",
-                    color: "var(--neon-magenta)",
-                    fontWeight: 700,
-                  }}
-                >
-                  ● Gate ready to process digital banking API link
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="booking-footer-actions">
-            {bookingStep > 1 && (
-              <button
-                className="btn-geo btn-geo-secondary"
-                onClick={() => setBookingStep((prev) => prev - 1)}
-              >
-                Back
-              </button>
-            )}
-            {bookingStep < 3 ? (
-              <button
-                className="btn-geo btn-geo-primary"
-                onClick={handleNextStep}
-              >
-                Next Phase
-              </button>
-            ) : (
-              <button
-                className="btn-geo btn-geo-primary"
-                onClick={handleResetBooking}
-              >
-                Book Another Ticket
-              </button>
-            )}
-          </div>
+          ))}
         </div>
-      </section>
 
-      {/* NOW SHOWING GRID */}
-      <section className="catalog-container" id="movies">
-        <h2 className="section-title-minimal">Now Exhibiting</h2>
+        <button className="carousel-arrow-btn left" onClick={handlePrevSlide} aria-label="Previous Slide">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button className="carousel-arrow-btn right" onClick={handleNextSlide} aria-label="Next Slide">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
 
-        {loadingMovies && (
-          <p style={{ color: "var(--text-muted)" }}>
-            Fetching digital core database...
-          </p>
-        )}
-        {loadError && (
-          <p style={{ color: "var(--neon-magenta)" }}>⚠️ {loadError}</p>
-        )}
-
-        <div className="unadorned-grid">
-          {movies.map((movie) => (
-            <article className="clean-movie-card" key={movie._id}>
-              <img
-                src={movie.poster || "https://via.placeholder.com/300x450"}
-                alt={movie.title}
-                loading="lazy"
-              />
-              <div className="reveal-overlay">
-                <div>
-                  <h3 className="reveal-title">{movie.title}</h3>
-                  <p className="reveal-meta">{movie.genre || "Variant"}</p>
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: "0.85rem",
-                      marginBottom: "20px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    ⏱️ {movie.duration || "--"} MIN <br />⭐{" "}
-                    {movie.rating || "N/A"} SCORE
-                  </p>
-                  <button className="btn-reveal-details">Access Node</button>
-                </div>
-              </div>
-            </article>
+        <div className="carousel-dots-indicator">
+          {heroSlides.map((_, idx) => (
+            <div
+              key={idx}
+              className={`carousel-dot ${idx === activeSlide ? "active" : ""}`}
+              onClick={() => setActiveSlide(idx)}
+            ></div>
           ))}
         </div>
       </section>
 
+      {/* NOW SHOWING */}
+      <section className="section-wrapper" id="movies">
+        <div className="section-header-row">
+          <h2 className="section-main-title">Now Showing</h2>
+          <a href="#movies" className="section-view-all-link">View All</a>
+        </div>
+
+        {loadingMovies && (
+          <p style={{ color: "var(--theme-text-secondary)", textAlign: "center", padding: "40px 0" }}>
+            Loading...
+          </p>
+        )}
+
+        {!loadingMovies && nowShowingMovies.length === 0 && (
+          <p style={{ color: "var(--theme-text-secondary)", textAlign: "center", padding: "40px 0" }}>
+            No movies currently showing. Please check back later.
+          </p>
+        )}
+
+        <div className="movies-responsive-grid">
+          {nowShowingMovies.map((movie) => (
+            <div className="movie-showcase-card" key={movie._id}>
+              <div className="card-poster-area">
+                <img
+                  src={movie.posterUrl || "https://via.placeholder.com/300x450"}
+                  alt={movie.title}
+                />
+                <div className="rating-indicator-badge">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#ffb400">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                  </svg>
+                  <span>{movie.rating ? movie.rating.toFixed(1) : "0.0"}</span>
+                </div>
+              </div>
+              <div className="card-info-area">
+                <h3 className="card-movie-title" title={movie.title}>
+                  {movie.title}
+                </h3>
+                <div className="card-movie-genre">
+                  {Array.isArray(movie.genre) ? movie.genre.join(", ") : movie.genre || ""}
+                </div>
+                <div className="card-movie-meta-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>{movie.duration || "--"} min</span>
+                </div>
+              </div>
+              <button
+                className="btn-card-action"
+                onClick={() => navigate(`/movie/${movie._id}`)}
+              >
+                Book Tickets
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* COMING SOON */}
+      <section className="section-wrapper" style={{ paddingTop: 0 }}>
+        <div className="section-header-row">
+          <h2 className="section-main-title">Coming Soon</h2>
+        </div>
+
+        {!loadingMovies && comingSoonMovies.length === 0 && (
+          <p style={{ color: "var(--theme-text-secondary)", textAlign: "center", padding: "40px 0" }}>
+            No upcoming movies at this time.
+          </p>
+        )}
+
+        <div className="movies-responsive-grid">
+          {comingSoonMovies.map((movie) => (
+            <div className="movie-showcase-card" key={movie._id}>
+              <div className="card-poster-area">
+                <img
+                  src={movie.posterUrl || "https://via.placeholder.com/300x450"}
+                  alt={movie.title}
+                />
+                <div className="coming-soon-indicator-badge">Coming Soon</div>
+              </div>
+              <div className="card-info-area">
+                <h3 className="card-movie-title" title={movie.title}>
+                  {movie.title}
+                </h3>
+                <div className="card-movie-genre" style={{ marginBottom: "12px" }}>
+                  {Array.isArray(movie.genre) ? movie.genre.join(", ") : movie.genre || ""}
+                </div>
+                <div className="card-movie-meta-item">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>{formatDateString(movie.releaseDate)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SPECIAL PROMOTIONS */}
+      <section className="section-wrapper" id="promotions" style={{ paddingTop: 0 }}>
+        <div className="section-header-row">
+          <h2 className="section-main-title">Special Promotions</h2>
+        </div>
+        <div className="promotions-horizontal-layout">
+          <div className="promo-offer-card">
+            <span className="promo-discount-badge">50% Off</span>
+            <h3 className="promo-offer-title">Member Monday</h3>
+            <p className="promo-offer-desc">50% off all tickets every Monday for members</p>
+          </div>
+          <div className="promo-offer-card">
+            <span className="promo-discount-badge">30% Off</span>
+            <h3 className="promo-offer-title">Student Special</h3>
+            <p className="promo-offer-desc">Get 30% discount with valid student ID</p>
+          </div>
+          <div className="promo-offer-card">
+            <span className="promo-discount-badge">Buy 4 Get 1</span>
+            <h3 className="promo-offer-title">Family Package</h3>
+            <p className="promo-offer-desc">Buy 4 tickets, get 1 free + free popcorn</p>
+          </div>
+        </div>
+      </section>
+
       {/* FOOTER */}
-      <footer className="slim-footer">
-        <div>© 2026 CINEMAX. LAB ENVIRONMENT INTERFACE.</div>
-        <div style={{ display: "flex", gap: "24px" }}>
-          <span>LATENCY: 14MS</span>
-          <span>STATUS: OPERATIONAL</span>
+      <footer className="premium-footer" id="contact">
+        <div className="footer-grid-container">
+          <div className="footer-info-col">
+            <div className="logo-box">
+              <div className="logo-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z" />
+                </svg>
+              </div>
+              <div className="logo-text">Cinema<span>Hub</span></div>
+            </div>
+            <p className="footer-slogan">
+              Experience the best movies in comfort and style. Your ultimate cinema destination.
+            </p>
+            <div className="footer-social-bar">
+              <a href="#" className="footer-social-icon" aria-label="Facebook">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                </svg>
+              </a>
+              <a href="#" className="footer-social-icon" aria-label="Instagram">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+              </a>
+              <a href="#" className="footer-social-icon" aria-label="Twitter">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <a href="#" className="footer-social-icon" aria-label="YouTube">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Quick Links</h4>
+            <ul className="footer-links-list">
+              <li className="footer-link-item"><a href="/">Home</a></li>
+              <li className="footer-link-item"><a href="#movies">Movies</a></li>
+              <li className="footer-link-item"><a href="#cinemas">Cinemas</a></li>
+              <li className="footer-link-item"><a href="#promotions">Promotions</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Support</h4>
+            <ul className="footer-links-list">
+              <li className="footer-link-item"><a href="#">Help Center</a></li>
+              <li className="footer-link-item"><a href="#">Terms of Service</a></li>
+              <li className="footer-link-item"><a href="#">Privacy Policy</a></li>
+              <li className="footer-link-item"><a href="#">FAQs</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Contact Us</h4>
+            <div className="footer-contact-details">
+              <div className="footer-contact-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>info@cinemahub.com</span>
+              </div>
+              <div className="footer-contact-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                <span>1900-xxxx</span>
+              </div>
+              <div className="footer-contact-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <span>Ho Chi Minh City, Vietnam</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom-copyright">
+          © 2026 CinemaHub. All rights reserved.
         </div>
       </footer>
     </div>

@@ -1,11 +1,34 @@
 const Movie = require("../models/Movie");
 
-// Logic lấy toàn bộ danh sách phim từ Database
+// Lấy tất cả phim
 const getAllMoviesFromDB = async () => {
-  // Sắp xếp phim mới nhất lên đầu dựa vào thuộc tính timestamps (createdAt: -1)
-  return await Movie.find().sort({ createdAt: -1 });
+  try {
+    return await Movie.find();
+  } catch (error) {
+    throw new Error("DB error (get all movies): " + error.message);
+  }
+};
+
+// Lấy phim trang chủ (mới nhất)
+const getHomeMoviesFromDB = async (limit = 10) => {
+  try {
+    return await Movie.find().sort({ createdAt: -1 }).limit(limit);
+  } catch (error) {
+    throw new Error("DB error (home movies): " + error.message);
+  }
+};
+
+// Lấy chi tiết phim theo ID
+const getMovieByIdFromDB = async (id) => {
+  try {
+    return await Movie.findById(id);
+  } catch (error) {
+    throw new Error("DB error (movie by id): " + error.message);
+  }
 };
 
 module.exports = {
   getAllMoviesFromDB,
+  getHomeMoviesFromDB,
+  getMovieByIdFromDB,
 };

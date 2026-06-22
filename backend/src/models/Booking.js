@@ -9,7 +9,7 @@ const TicketDetailSchema = new mongoose.Schema({
 // Chi tiết đồ ăn thức uống kèm theo
 const FoodOrderSchema = new mongoose.Schema({
   foodItem: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: "FoodItem",
     required: true,
   },
@@ -36,9 +36,10 @@ const PaymentSchema = new mongoose.Schema({
 
 const BookingSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
+    user: { type: String, ref: "User", required: true },
     showtime: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Showtime",
       required: true,
     },

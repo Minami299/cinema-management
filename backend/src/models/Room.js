@@ -14,9 +14,10 @@ const SeatSchema = new mongoose.Schema({
 
 const RoomSchema = new mongoose.Schema(
   {
+    _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
     name: { type: String, required: true }, // Phòng 1, Phòng 2, IMAX Room...
     cinema: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Cinema",
       required: true,
     },

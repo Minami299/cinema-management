@@ -9,6 +9,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AuthLayout from "./pages/AuthLayout";
 import NotFoundPage from "./pages/NotFoundPage";
 import "./App.css";
+import MovieDetailPage from "./pages/MovieDetailPage";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             }
           />
           <Route path="*" element={<NotFoundPage />} />
+          <Route path="/movie/:id" element={<MovieDetailPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -9,7 +9,7 @@ const ShowtimeSeatStatusSchema = new mongoose.Schema({
     default: "Available",
   },
   lockedBy: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: "User",
     default: null,
   }, // User đang giữ ghế tạm thời
@@ -18,17 +18,18 @@ const ShowtimeSeatStatusSchema = new mongoose.Schema({
 
 const ShowtimeSchema = new mongoose.Schema(
   {
+    _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
     movie: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Movie",
       required: true,
     },
     cinema: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Cinema",
       required: true,
     },
-    room: { type: mongoose.Schema.Types.ObjectId, ref: "Room", required: true },
+    room: { type: String, ref: "Room", required: true },
     date: { type: Date, required: true }, // Ngày chiếu (YYYY-MM-DD)
     startTime: { type: String, required: true }, // Giờ bắt đầu, ví dụ: "14:30"
     endTime: { type: String, required: true }, // Giờ kết thúc, ví dụ: "16:45"

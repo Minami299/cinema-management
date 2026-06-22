@@ -2,8 +2,13 @@ const express = require("express");
 const router = express.Router();
 const movieController = require("../controllers/movieController");
 
-// Định nghĩa endpoint của bạn
+// GET ALL MOVIES
 router.get("/all", movieController.handleGetAllMovies);
 
-// 🔴 QUAN TRỌNG: Bạn phải có dòng này ở cuối file!
+// HOME MOVIES
+router.get("/home", movieController.getHomeMovies);
+
+// GET MOVIE DETAIL (FIX 404 ERROR)
+router.get("/:id", movieController.handleGetMovieById);
+
 module.exports = router;
