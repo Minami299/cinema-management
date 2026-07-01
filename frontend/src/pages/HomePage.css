@@ -1,5 +1,5 @@
 /* CUSTOM STYLES MATCHING THE PREMIUM CINEMA THEME */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 :root {
   --theme-black: #0c0c0e;
@@ -16,7 +16,10 @@
 .cinemahub-home {
   background-color: var(--theme-black);
   color: var(--theme-text-primary);
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -87,14 +90,30 @@
   transition: var(--transition-smooth);
   position: relative;
   padding: 6px 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.2;
 }
 
-.nav-item-link:hover, .nav-item-link.active {
+button.nav-item-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 6px 0;
+}
+
+.nav-item-link:hover,
+.nav-item-link.active {
   color: #ffffff;
 }
 
 .nav-item-link::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -197,7 +216,12 @@
 .slide-overlay-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, var(--theme-black) 0%, rgba(12, 12, 14, 0.4) 50%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(
+    to top,
+    var(--theme-black) 0%,
+    rgba(12, 12, 14, 0.4) 50%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 .slide-content-wrap {
@@ -215,7 +239,7 @@
   line-height: 1.1;
   margin-bottom: 16px;
   letter-spacing: -1px;
-  text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .slide-desc {
@@ -223,7 +247,7 @@
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.5;
   margin-bottom: 28px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .btn-book-now {
@@ -330,7 +354,7 @@
 }
 
 .section-main-title::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 15%;
@@ -385,7 +409,7 @@
 
 .movie-showcase-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -529,12 +553,12 @@
 
 .promo-offer-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
   filter: brightness(1.1);
 }
 
 .promo-offer-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -20px;
   right: -20px;
