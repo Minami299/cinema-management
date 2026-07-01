@@ -11,9 +11,9 @@ import AuthLayout from "./pages/AuthLayout";
 import NotFoundPage from "./pages/NotFoundPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import MovieDetailPage from "./pages/MovieDetailPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import ManagerDashboard from "./pages/ManagerDashboard";
-import StaffDashboard from "./pages/StaffDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManagerDashboard from "./pages/manager/ManagerDashboard";
+import StaffDashboard from "./pages/staff/StaffDashboard";
 import "./App.css";
 
 function App() {
