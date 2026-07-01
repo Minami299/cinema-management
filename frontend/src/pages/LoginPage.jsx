@@ -225,7 +225,7 @@ const SignInForm = ({ onSwitchTab }) => {
     setError("");
     try {
       await login({ email, password });
-      navigate("/");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Đăng nhập thất bại.");
     } finally {
@@ -370,7 +370,7 @@ const CreateAccountForm = ({ onSwitchTab }) => {
         password,
         phone,
       });
-      navigate("/");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed.");
     } finally {

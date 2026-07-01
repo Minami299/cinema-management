@@ -21,8 +21,11 @@ const DashboardPage = () => {
       return;
     }
 
-    const roleName =
-      user.role && typeof user.role === "object" ? user.role.name : user.role;
+    const roleName = String(
+      user.role && typeof user.role === "object"
+        ? user.role.name
+        : user.role || "",
+    ).toUpperCase();
 
     switch (roleName) {
       case "ADMIN":
