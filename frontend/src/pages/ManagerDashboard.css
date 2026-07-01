@@ -1,0 +1,325 @@
+/* ManagerDashboard.css - tương tự AdminDashboard nhưng với màu tím */
+
+.manager-root {
+  display: flex;
+  min-height: 100vh;
+  background: #080810;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: #e0e0f0;
+}
+
+.manager-sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #10101e 0%, #0d0d1a 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.manager-sidebar.collapsed { width: 68px; }
+
+.manager-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 8px;
+}
+
+.manager-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #7c3aed;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.manager-logo svg { flex-shrink: 0; }
+
+.manager-sidebar-toggle {
+  background: none;
+  border: none;
+  color: #5555aa;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.manager-sidebar-toggle:hover { color: #c0c0e0; }
+
+.manager-nav {
+  flex: 1;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.manager-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  color: #6666aa;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: left;
+  width: 100%;
+}
+
+.manager-nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #c0c0e0; }
+.manager-nav-item.active { background: rgba(124, 58, 237, 0.12); color: #7c3aed; }
+.manager-nav-item svg { flex-shrink: 0; }
+
+.manager-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.manager-sidebar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.manager-sidebar-user-info { flex: 1; overflow: hidden; }
+
+.manager-sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d0d0e8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.manager-sidebar-user-role {
+  font-size: 11px;
+  color: #7c3aed;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.manager-logout-btn {
+  background: none;
+  border: none;
+  color: #5555aa;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.manager-logout-btn:hover { color: #ef4444; }
+
+.manager-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.manager-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 36px 0;
+  gap: 16px;
+}
+
+.manager-page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f0f0ff;
+  margin: 0 0 4px;
+}
+
+.manager-page-subtitle {
+  font-size: 14px;
+  color: #6666aa;
+  margin: 0;
+}
+
+.manager-role-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(124, 58, 237, 0.15);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  color: #7c3aed;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.manager-topbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #b0b0d0;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.manager-topbar-btn:hover { background: rgba(255, 255, 255, 0.1); color: #e0e0f8; border-color: rgba(255, 255, 255, 0.18); }
+
+.manager-content {
+  padding: 28px 36px 40px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.manager-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.manager-stat-card {
+  background: linear-gradient(135deg, rgba(20, 20, 40, 0.9), rgba(14, 14, 28, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.manager-stat-card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.12); }
+
+.manager-stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.manager-stat-info { flex: 1; min-width: 0; }
+
+.manager-stat-value { font-size: 22px; font-weight: 700; color: #f0f0ff; line-height: 1.1; }
+.manager-stat-label { font-size: 12px; color: #6666aa; margin-top: 3px; }
+
+.manager-stat-change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.manager-stat-change.positive { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+
+.manager-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c0c0e0;
+  margin-bottom: 14px;
+}
+
+.manager-table-wrap {
+  background: linear-gradient(135deg, rgba(18, 18, 38, 0.9), rgba(12, 12, 24, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.manager-table { width: 100%; border-collapse: collapse; }
+
+.manager-table thead th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5555aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.manager-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.manager-table tbody tr:last-child { border-bottom: none; }
+.manager-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
+.manager-table td { padding: 12px 16px; font-size: 14px; color: #c0c0e0; }
+
+.manager-time-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgba(124, 58, 237, 0.15);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  color: #a78bfa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.manager-table-status {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.manager-table-status.open { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.manager-table-status.full { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+.manager-placeholder-panel {
+  background: linear-gradient(135deg, rgba(18, 18, 38, 0.9), rgba(12, 12, 24, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.manager-placeholder-title { font-size: 18px; font-weight: 600; color: #c0c0e0; margin-bottom: 10px; }
+.manager-placeholder-desc { font-size: 14px; color: #5555aa; line-height: 1.6; max-width: 400px; margin: 0 auto; }

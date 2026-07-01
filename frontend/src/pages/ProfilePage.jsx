@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import axiosClient from "../services/axiosClient";
 import "./ProfilePage.css";
 
 const TIER_CONFIG = {
@@ -90,11 +91,8 @@ const ProfilePage = () => {
     const fetchFavorites = async () => {
       setIsLoadingFav(true);
       try {
-        // Đã sửa đường dẫn thành /api/users/... để đồng bộ với backend của bạn
-        const response = await fetch(
-          `http://localhost:9999/api/users/${displayUser._id}/favorites`,
-        );
-        const result = await response.json();
+        const response = await axiosClient.get(`/users/${displayUser._id}/favorites`);
+        const result = response.data;
 
         if (result.success) {
           // Lưu mảng các bộ phim đã được populate (có trường poster) vào state

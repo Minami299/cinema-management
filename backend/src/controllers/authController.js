@@ -6,24 +6,28 @@ const jwt = require("jsonwebtoken");
 // Cấu hình cookie dùng chung để tránh lặp code (DRY)
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  secure: false, // Đặt false để hỗ trợ HTTP localhost (tránh lỗi bảo mật cookie trên HTTP)
+  sameSite: "lax", // Đổi thành lax để cookie có thể gửi cross-port trên localhost
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
 };
 
 const generateAccessToken = (user) => {
+  const roleName =
+    user.role && typeof user.role === "object" ? user.role.name : user.role;
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: roleName },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "15m" },
   );
 };
 
 const generateRefreshToken = (user) => {
+  const roleName =
+    user.role && typeof user.role === "object" ? user.role.name : user.role;
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user._id, role: roleName },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
 };
 
@@ -58,6 +62,7 @@ class AuthController {
         roleId = defaultRole._id;
       }
 
+      console.log("Bắt đầu đăng ký user:", { name, email, phone, roleId });
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -68,7 +73,8 @@ class AuthController {
         phone,
         role: roleId,
       });
-      await newUser.save();
+      const savedUser = await newUser.save();
+      console.log("Đã lưu user vào DB thành công:", savedUser);
 
       // Ánh xạ role ngay sau khi tạo để trả về đầy đủ thông tin chữ
       await newUser.populate("role");
@@ -93,6 +99,7 @@ class AuthController {
         },
       });
     } catch (error) {
+      console.error("Lỗi xảy ra khi đăng ký:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
@@ -109,7 +116,7 @@ class AuthController {
 
       // Ánh xạ role để lấy tên hiển thị của phân quyền
       const user = await User.findOne({ email }).populate("role");
-      
+
       if (!user) {
         return res
           .status(401)
@@ -126,6 +133,7 @@ class AuthController {
       const accessToken = generateAccessToken(user);
       const refreshToken = generateRefreshToken(user);
 
+      console.log("Set RefreshToken Cookie:", refreshToken ? "Có" : "Không", COOKIE_OPTIONS);
       res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
 
       res.status(200).json({
@@ -156,6 +164,7 @@ class AuthController {
 
   async refreshToken(req, res) {
     try {
+      console.log("Cookies nhận được từ client:", req.cookies);
       const token = req.cookies.refreshToken;
       if (!token) {
         return res
@@ -166,7 +175,7 @@ class AuthController {
       // Giải mã đồng bộ trực tiếp trong khối try...catch
       const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-      const user = await User.findById(decoded.id);
+      const user = await User.findById(decoded.id).populate("role");
       if (!user) {
         return res
           .status(404)
@@ -217,10 +226,10 @@ class AuthController {
         success: true,
         data: {
           _id: user._id,
-          id: user._id, 
+          id: user._id,
           name: user.name,
           email: user.email,
-          phone: user.phone, 
+          phone: user.phone,
           role: user.role,
         },
       });
