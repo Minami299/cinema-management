@@ -1,9 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const showtimeController = require("../controllers/showtimeController");
+const authMiddleware = require("../middlewares/authMiddleware");
+const authorizeRoles = require("../middlewares/roleMiddleware");
 
-router.post("/", showtimeController.create);
-router.get("/cinema/:cinemaId", showtimeController.getByCinema);
-router.get("/:id", showtimeController.getById);
+router.post(
+  "/",
+  authMiddleware,
+  authorizeRoles("ADMIN", "MANAGER"),
+  showtimeController.create,
+);
+router.get("/movie/:movieId", showtimeController.getByMovie);
 
 module.exports = router;

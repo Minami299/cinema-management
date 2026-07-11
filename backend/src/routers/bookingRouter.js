@@ -4,10 +4,20 @@ const bookingController = require("../controllers/bookingController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authorizeRoles = require("../middlewares/roleMiddleware");
 
-// Đặt vé: cần đăng nhập (CUSTOMER, STAFF, MANAGER, ADMIN đều có thể)
 router.post("/", authMiddleware, bookingController.create);
+router.get("/history/:userId", authMiddleware, bookingController.getHistory);
 
-// Xem danh sách đặt vé: ADMIN, MANAGER, STAFF
-// router.get("/", authMiddleware, authorizeRoles("ADMIN", "MANAGER", "STAFF"), bookingController.getAll);
+router.get(
+  "/all",
+  authMiddleware,
+  authorizeRoles("ADMIN", "MANAGER"),
+  bookingController.getAllBookings,
+);
+router.put(
+  "/:id/status",
+  authMiddleware,
+  authorizeRoles("ADMIN"),
+  bookingController.updateBookingStatus,
+);
 
 module.exports = router;

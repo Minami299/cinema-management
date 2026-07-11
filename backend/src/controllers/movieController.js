@@ -1,69 +1,79 @@
 const movieService = require("../services/movieService");
 
-// GET ALL
 const handleGetAllMovies = async (req, res) => {
   try {
     const movies = await movieService.getAllMoviesFromDB();
-
-    return res.status(200).json({
-      success: true,
-      message: "Lấy tất cả phim thành công",
-      count: movies.length,
-      data: movies,
-    });
+    return res
+      .status(200)
+      .json({ success: true, count: movies.length, data: movies });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// HOME MOVIES
 const getHomeMovies = async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-
-    const movies = await movieService.getHomeMoviesFromDB(limit);
-
-    return res.status(200).json({
-      success: true,
-      message: "Lấy phim trang chủ thành công",
-      count: movies.length,
-      data: movies,
-    });
+    const movies = await movieService.getHomeMoviesFromDB(
+      parseInt(req.query.limit) || 10,
+    );
+    return res.status(200).json({ success: true, data: movies });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// GET BY ID (FIX 404)
 const handleGetMovieById = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const movie = await movieService.getMovieByIdFromDB(id);
-
-    if (!movie) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy phim",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Lấy chi tiết phim thành công",
-      data: movie,
-    });
+    const movie = await movieService.getMovieByIdFromDB(req.params.id);
+    if (!movie)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phim" });
+    return res.status(200).json({ success: true, data: movie });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const handleCreateMovie = async (req, res) => {
+  try {
+    const newMovie = await movieService.createMovieInDB(req.body);
+    return res
+      .status(201)
+      .json({ success: true, message: "Thêm phim thành công", data: newMovie });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const handleUpdateMovie = async (req, res) => {
+  try {
+    const updatedMovie = await movieService.updateMovieInDB(
+      req.params.id,
+      req.body,
+    );
+    if (!updatedMovie)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phim" });
+    return res.status(200).json({ success: true, data: updatedMovie });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const handleDeleteMovie = async (req, res) => {
+  try {
+    const deletedMovie = await movieService.deleteMovieFromDB(req.params.id);
+    if (!deletedMovie)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy phim" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Xóa phim thành công" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -71,4 +81,7 @@ module.exports = {
   handleGetAllMovies,
   getHomeMovies,
   handleGetMovieById,
+  handleCreateMovie,
+  handleUpdateMovie,
+  handleDeleteMovie,
 };

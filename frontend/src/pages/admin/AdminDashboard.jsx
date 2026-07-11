@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import "./AdminDashboard.css";
 
+import "./AdminDashboard.css";
+import movieService from "../../services/movieService";
+
+// Thêm tab "movies" vào NAV_ITEMS
 const NAV_ITEMS = [
   {
     key: "overview",
     label: "Tổng quan",
     icon: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z",
+  },
+  {
+    key: "movies",
+    label: "Quản lý phim",
+    icon: "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z",
   },
   {
     key: "users",
@@ -57,39 +65,6 @@ const STATS = [
   },
 ];
 
-const RECENT_USERS = [
-  {
-    name: "Nguyen Van A",
-    email: "nva@gmail.com",
-    role: "CUSTOMER",
-    status: "active",
-  },
-  {
-    name: "Tran Thi B",
-    email: "ttb@gmail.com",
-    role: "STAFF",
-    status: "active",
-  },
-  {
-    name: "Le Van C",
-    email: "lvc@gmail.com",
-    role: "MANAGER",
-    status: "inactive",
-  },
-  {
-    name: "Pham Thi D",
-    email: "ptd@gmail.com",
-    role: "CUSTOMER",
-    status: "active",
-  },
-  {
-    name: "Hoang Van E",
-    email: "hve@gmail.com",
-    role: "CUSTOMER",
-    status: "active",
-  },
-];
-
 const ROLE_COLORS = {
   ADMIN: "#dc2626",
   MANAGER: "#7c3aed",
@@ -102,6 +77,126 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [activeNav, setActiveNav] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // --- STATE LƯU TRỮ DATA THỰC TẾ ---
+  const [movies, setMovies] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await movieService.users.getAll();
+
+      // Kiểm tra cấu trúc trả về từ backend của bạn
+      if (Array.isArray(res.data)) {
+        setUsers(res.data);
+      } else if (res.data && Array.isArray(res.data.users)) {
+        setUsers(res.data.users);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        setUsers(res.data.data); // Đôi khi backend bọc trong res.data.data
+      } else {
+        setUsers([]); // Nếu không tìm thấy mảng nào thì đưa về mảng rỗng để không bị crash giao diện
+      }
+    } catch (error) {
+      console.error("Lỗi lấy danh sách user:", error);
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMovies = async () => {
+    try {
+      setLoading(true);
+      const res = await movieService.movies.getAll();
+
+      if (Array.isArray(res.data)) {
+        setMovies(res.data);
+      } else if (res.data && Array.isArray(res.data.movies)) {
+        setMovies(res.data.movies);
+      } else if (res.data && Array.isArray(res.data.data)) {
+        setMovies(res.data.data);
+      } else {
+        setMovies([]);
+      }
+    } catch (error) {
+      console.error("Lỗi lấy danh sách phim:", error);
+      setMovies([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeNav === "movies" || activeNav === "overview") {
+      fetchMovies();
+    }
+    if (activeNav === "users" || activeNav === "overview") {
+      fetchUsers();
+    }
+  }, [activeNav]);
+
+  // --- XỬ LÝ ACTION (THÊM / SỬA / XÓA) ---
+  const handleCreateMovie = async () => {
+    const title = prompt("Nhập tên phim mới:");
+    if (!title) return;
+    try {
+      // Mock tạm trường dữ liệu, bạn có thể thay thế bằng Form/Modal thật sau
+      await movieService.movies.create({ title, description: "Mô tả phim" });
+      alert("Thêm phim thành công!");
+      fetchMovies();
+    } catch (error) {
+      alert("Không thể thêm phim");
+    }
+  };
+
+  const handleUpdateMovie = async (id, currentTitle) => {
+    const newTitle = prompt("Sửa tên phim:", currentTitle);
+    if (!newTitle) return;
+    try {
+      await apiService.movies.update(id, { title: newTitle });
+      alert("Cập nhật thành công!");
+      fetchMovies();
+    } catch (error) {
+      alert("Cập nhật thất bại");
+    }
+  };
+
+  const handleDeleteMovie = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa phim này không?")) {
+      try {
+        await movieService.movies.delete(id);
+        alert("Xóa thành công!");
+        fetchMovies();
+      } catch (error) {
+        alert("Xóa thất bại!");
+      }
+    }
+  };
+
+  const handleToggleUserStatus = async (id, currentStatus) => {
+    try {
+      const nextStatus = !currentStatus; // đảo trạng thái true/false hoặc 'active'/'inactive'
+      await movieService.users.toggleStatus(id, nextStatus);
+      alert("Thay đổi trạng thái tài khoản thành công!");
+      fetchUsers();
+    } catch (error) {
+      alert("Không thể thay đổi trạng thái!");
+    }
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
+      try {
+        await movieService.users.delete(id);
+        alert("Xóa người dùng thành công!");
+        fetchUsers();
+      } catch (error) {
+        alert("Xóa người dùng thất bại!");
+      }
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -205,6 +300,7 @@ const AdminDashboard = () => {
           <div>
             <h1 className="admin-page-title">
               {activeNav === "overview" && "Tổng quan hệ thống"}
+              {activeNav === "movies" && "Quản lý phim ảnh"}
               {activeNav === "users" && "Quản lý người dùng"}
               {activeNav === "roles" && "Quản lý phân quyền"}
               {activeNav === "settings" && "Cài đặt hệ thống"}
@@ -234,6 +330,8 @@ const AdminDashboard = () => {
           </div>
         </header>
 
+        {loading && <div className="admin-loading">Đang tải dữ liệu...</div>}
+
         {/* OVERVIEW */}
         {activeNav === "overview" && (
           <div className="admin-content">
@@ -262,7 +360,9 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            <div className="admin-section-title">Người dùng mới nhất</div>
+            <div className="admin-section-title">
+              Người dùng mới cập nhật (Realtime)
+            </div>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -271,42 +371,115 @@ const AdminDashboard = () => {
                     <th>Email</th>
                     <th>Role</th>
                     <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(users) &&
+                    users.slice(0, 5).map((u, i) => {
+                      // 1. Chuẩn hóa u.role thành chuỗi chữ (String) an toàn tại đây
+                      const overviewUserRoleStr =
+                        u.role && typeof u.role === "object"
+                          ? u.role.name
+                          : u.role;
+
+                      return (
+                        <tr key={u._id || i}>
+                          <td>
+                            <div className="admin-table-user">
+                              <div className="admin-table-avatar">
+                                {u.name?.charAt(0)}
+                              </div>
+                              {u.name}
+                            </div>
+                          </td>
+                          <td style={{ color: "#8888aa" }}>{u.email}</td>
+                          <td>
+                            <span
+                              className="admin-table-role-tag"
+                              style={{
+                                // 2. Sử dụng biến chuỗi đã chuẩn hóa để lấy màu map từ ROLE_COLORS
+                                background: `${ROLE_COLORS[overviewUserRoleStr] || "#ccc"}22`,
+                                color:
+                                  ROLE_COLORS[overviewUserRoleStr] || "#333",
+                                border: `1px solid ${ROLE_COLORS[overviewUserRoleStr] || "#ccc"}44`,
+                              }}
+                            >
+                              {/* 3. In ra chuỗi chữ an toàn, React sẽ không bao giờ crash nữa */}
+                              {overviewUserRoleStr}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`admin-table-status ${u.isActive || u.status === "active" ? "active" : "inactive"}`}
+                            >
+                              {u.isActive || u.status === "active"
+                                ? "Hoạt động"
+                                : "Khóa"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* MOVIES (TAB MỚI THÊM) */}
+        {activeNav === "movies" && (
+          <div className="admin-content">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <div className="admin-section-title">Danh sách Phim</div>
+              <button
+                className="admin-topbar-btn"
+                style={{ background: "#e50914", color: "#fff" }}
+                onClick={handleCreateMovie}
+              >
+                + Thêm phim mới
+              </button>
+            </div>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Tên Phim</th>
+                    <th>Mô tả / Thể loại</th>
                     <th>Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {RECENT_USERS.map((u, i) => (
-                    <tr key={i}>
+                  {movies.map((m) => (
+                    <tr key={m._id || m.id}>
                       <td>
-                        <div className="admin-table-user">
-                          <div className="admin-table-avatar">
-                            {u.name.charAt(0)}
-                          </div>
-                          {u.name}
-                        </div>
+                        <strong>{m.title || m.name}</strong>
                       </td>
-                      <td style={{ color: "#8888aa" }}>{u.email}</td>
+                      <td style={{ color: "#aaa" }}>
+                        {m.description || m.genre || "Chưa có mô tả"}
+                      </td>
                       <td>
-                        <span
-                          className="admin-table-role-tag"
-                          style={{
-                            background: `${ROLE_COLORS[u.role]}22`,
-                            color: ROLE_COLORS[u.role],
-                            border: `1px solid ${ROLE_COLORS[u.role]}44`,
-                          }}
+                        <button
+                          className="admin-table-action-btn"
+                          style={{ marginRight: 8, color: "#f59e0b" }}
+                          onClick={() =>
+                            handleUpdateMovie(m._id || m.id, m.title)
+                          }
                         >
-                          {u.role}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`admin-table-status ${u.status}`}>
-                          {u.status === "active"
-                            ? "Hoạt động"
-                            : "Không hoạt động"}
-                        </span>
-                      </td>
-                      <td>
-                        <button className="admin-table-action-btn">Xem</button>
+                          Sửa
+                        </button>
+                        <button
+                          className="admin-table-action-btn"
+                          style={{ color: "#dc2626" }}
+                          onClick={() => handleDeleteMovie(m._id || m.id)}
+                        >
+                          Xóa
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -319,32 +492,87 @@ const AdminDashboard = () => {
         {/* USERS */}
         {activeNav === "users" && (
           <div className="admin-content">
-            <div className="admin-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#6366f1", marginBottom: 16 }}
-              >
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <div className="admin-placeholder-title">Quản lý người dùng</div>
-              <div className="admin-placeholder-desc">
-                Chức năng quản lý CRUD người dùng sẽ được tích hợp API ở đây.
-              </div>
+            <div className="admin-section-title">
+              Quản lý Người Dùng (Realtime API)
+            </div>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Tên</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(users) &&
+                    users.map((u) => {
+                      const currentStatus =
+                        u.isActive !== undefined
+                          ? u.isActive
+                          : u.status === "active";
+                      return (
+                        <tr key={u._id || u.id}>
+                          <td>
+                            <div className="admin-table-user">
+                              <div className="admin-table-avatar">
+                                {u.name?.charAt(0)}
+                              </div>
+                              {u.name}
+                            </div>
+                          </td>
+                          <td style={{ color: "#8888aa" }}>{u.email}</td>
+                          <td>
+                            <span
+                              className="admin-table-role-tag"
+                              style={{
+                                background: `${ROLE_COLORS[u.role] || "#ccc"}22`,
+                                color: ROLE_COLORS[u.role] || "#333",
+                              }}
+                            >
+                              {u.role}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className={`admin-table-status ${currentStatus ? "active" : "inactive"}`}
+                            >
+                              {currentStatus ? "Hoạt động" : "Đã khóa"}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className="admin-table-action-btn"
+                              style={{ marginRight: 8, color: "#6366f1" }}
+                              onClick={() =>
+                                handleToggleUserStatus(
+                                  u._id || u.id,
+                                  currentStatus,
+                                )
+                              }
+                            >
+                              {currentStatus ? "Khóa" : "Mở khóa"}
+                            </button>
+                            <button
+                              className="admin-table-action-btn"
+                              style={{ color: "#dc2626" }}
+                              onClick={() => handleDeleteUser(u._id || u.id)}
+                            >
+                              Xóa
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* ROLES */}
+        {/* ROLES & SETTINGS MOCKUP */}
         {activeNav === "roles" && (
           <div className="admin-content">
             <div className="admin-roles-grid">
@@ -383,7 +611,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* SETTINGS */}
         {activeNav === "settings" && (
           <div className="admin-content">
             <div className="admin-placeholder-panel">
@@ -403,7 +630,7 @@ const AdminDashboard = () => {
               </svg>
               <div className="admin-placeholder-title">Cài đặt hệ thống</div>
               <div className="admin-placeholder-desc">
-                Cấu hình hệ thống, thông số bảo mật và tùy chỉnh nền tảng.
+                Cấu hình thông số bảo mật và tùy chỉnh nền tảng CinemaHub.
               </div>
             </div>
           </div>
