@@ -1,34 +1,34 @@
 const Movie = require("../models/Movie");
 
-// Lấy tất cả phim
-const getAllMoviesFromDB = async () => {
-  try {
-    return await Movie.find();
-  } catch (error) {
-    throw new Error("DB error (get all movies): " + error.message);
+class MovieService {
+  async getAllMoviesFromDB() {
+    return await Movie.find().sort({ createdAt: -1 });
   }
-};
 
-// Lấy phim trang chủ (mới nhất)
-const getHomeMoviesFromDB = async (limit = 10) => {
-  try {
-    return await Movie.find().sort({ createdAt: -1 }).limit(limit);
-  } catch (error) {
-    throw new Error("DB error (home movies): " + error.message);
+  async getHomeMoviesFromDB(limit) {
+    return await Movie.find().limit(limit).sort({ createdAt: -1 });
   }
-};
 
-// Lấy chi tiết phim theo ID
-const getMovieByIdFromDB = async (id) => {
-  try {
+  async getMovieByIdFromDB(id) {
     return await Movie.findById(id);
-  } catch (error) {
-    throw new Error("DB error (movie by id): " + error.message);
   }
-};
 
-module.exports = {
-  getAllMoviesFromDB,
-  getHomeMoviesFromDB,
-  getMovieByIdFromDB,
-};
+  async createMovieInDB(movieData) {
+    const movie = new Movie(movieData);
+    return await movie.save();
+  }
+
+  async updateMovieInDB(id, movieData) {
+    return await Movie.findByIdAndUpdate(
+      id,
+      { $set: movieData },
+      { new: true, runValidators: true },
+    );
+  }
+
+  async deleteMovieFromDB(id) {
+    return await Movie.findByIdAndDelete(id);
+  }
+}
+
+module.exports = new MovieService();

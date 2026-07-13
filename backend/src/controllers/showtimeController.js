@@ -1,36 +1,56 @@
-const showtimeService = require("../services/showtimeService");
+const Showtime = require("../models/Showtime");
 
 class ShowtimeController {
   async create(req, res) {
     try {
-      const showtime = await showtimeService.createShowtime(req.body);
-      res.status(201).json({ success: true, data: showtime });
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
+      const { room, date, startTime, endTime } = req.body;
 
-  async getByCinema(req, res) {
-    try {
-      const showtimes = await showtimeService.getShowtimesByCinema(
-        req.params.cinemaId,
-      );
-      res.status(200).json({ success: true, data: showtimes });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+      const isOverlapped = await Showtime.findOne({
+        room,
+        date: new Date(date),
+        $or: [{ startTime: { $lte: endTime }, endTime: { $gte: startTime } }],
+      });
 
-  async getById(req, res) {
-    try {
-      const showtime = await showtimeService.getShowtimeDetails(req.params.id);
-      if (!showtime)
+      if (isOverlapped) {
         return res
-          .status(404)
-          .json({ success: false, message: "Không tìm thấy suất chiếu" });
-      res.status(200).json({ success: true, data: showtime });
+          .status(400)
+          .json({
+            success: false,
+            message: "Khung giờ này phòng đã có suất chiếu khác.",
+          });
+      }
+
+      // Khởi tạo sơ đồ 60 ghế trống mặc định cho phòng chiếu phim mới
+      const seatStatus = [];
+      const rows = ["A", "B", "C", "D", "E", "F"];
+      for (let row of rows) {
+        for (let i = 1; i <= 10; i++) {
+          seatStatus.push({ seatNumber: `${row}${i}`, status: "Available" });
+        }
+      }
+
+      const newShowtime = new Showtime({ ...req.body, seatStatus });
+      await newShowtime.save();
+      return res
+        .status(201)
+        .json({
+          success: true,
+          message: "Tạo suất chiếu mới thành công",
+          data: newShowtime,
+        });
     } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async getByMovie(req, res) {
+    try {
+      const showtimes = await Showtime.find({
+        movie: req.params.movieId,
+      }).populate("cinema room");
+      return res.status(200).json({ success: true, data: showtimes });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
     }
   }
 }
