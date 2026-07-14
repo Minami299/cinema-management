@@ -28,7 +28,7 @@ const MovieDetailPage = () => {
   // States cho luồng đặt vé
   const [showtimes, setShowtimes] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedCinema, setSelectedCinema] = useState("");
+
   const [selectedShowtime, setSelectedShowtime] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [availableFoods, setAvailableFoods] = useState([]);
@@ -75,6 +75,8 @@ const MovieDetailPage = () => {
     fetchDetail();
   }, [id]);
 
+
+
   const posterUrl = useMemo(
     () =>
       movie?.posterUrl ||
@@ -100,38 +102,15 @@ const MovieDetailPage = () => {
     return [...new Set(dates)].filter(Boolean).sort();
   }, [showtimes]);
 
-  // Lọc ra danh sách rạp chiếu theo ngày đã chọn
-  const filteredCinemas = useMemo(() => {
+  // Lọc danh sách showtimes cụ thể theo ngày đã chọn
+  const filteredShowtimes = (() => {
     if (!selectedDate) return [];
-    const cinemas = showtimes
-      .filter((st) => {
-        if (!st.date) return false;
-        const dStr = new Date(st.date).toISOString().split("T")[0];
-        return dStr === selectedDate;
-      })
-      .map((st) => st.cinema);
-
-    // Loại bỏ các rạp trùng lặp dựa trên _id
-    const uniqueCinemas = [];
-    const map = new Map();
-    for (const item of cinemas) {
-      if (item && !map.has(item._id)) {
-        map.set(item._id, true);
-        uniqueCinemas.push(item);
-      }
-    }
-    return uniqueCinemas;
-  }, [showtimes, selectedDate]);
-
-  // Lọc danh sách showtimes cụ thể theo ngày và rạp đã chọn
-  const filteredShowtimes = useMemo(() => {
-    if (!selectedDate || !selectedCinema) return [];
     return showtimes.filter((st) => {
-      if (!st.date || !st.cinema) return false;
+      if (!st.date) return false;
       const dStr = new Date(st.date).toISOString().split("T")[0];
-      return dStr === selectedDate && st.cinema._id === selectedCinema;
+      return dStr === selectedDate;
     });
-  }, [showtimes, selectedDate, selectedCinema]);
+  })();
 
   // Hàm chọn suất chiếu
   const handleSelectShowtime = (st) => {
@@ -262,136 +241,200 @@ const MovieDetailPage = () => {
 
   return (
     <div className="movie-detail-page">
+      {/* 1. HERO SECTION WITH FULL BANNER */}
       <div className="movie-detail-hero">
         <div className="movie-detail-banner">
           <img src={bannerUrl} alt={movie.title} />
         </div>
 
-        <div className="movie-detail-grid">
+        <div className="movie-detail-hero-content">
           <div className="movie-detail-poster">
             <img src={posterUrl} alt={`${movie.title} poster`} />
           </div>
 
-          <div className="movie-detail-info">
-            <div className="movie-detail-headline">
-              <p className="movie-detail-subtitle">
-                {movie.status || "Now Showing"}
-              </p>
-              <h1 className="movie-detail-title">{movie.title}</h1>
-              <div className="movie-detail-tags">
-                {movie.ageRating && (
-                  <span className="movie-detail-tag">{movie.ageRating}</span>
-                )}
-                {movie.movieLanguage && (
-                  <span className="movie-detail-tag">
-                    {movie.movieLanguage}
-                  </span>
-                )}
-                <span className="movie-detail-tag status">
-                  {movie.status || "Coming Soon"}
-                </span>
-              </div>
+          <div className="movie-detail-info-header">
+            <p className="movie-detail-subtitle">
+              {movie.status || "Now Showing"}
+            </p>
+            <h1 className="movie-detail-title">{movie.title}</h1>
+            
+            <div className="movie-detail-tags">
+              {movie.ageRating && (
+                <span className="movie-detail-tag rating-tag">{movie.ageRating}</span>
+              )}
+              {movie.movieLanguage && (
+                <span className="movie-detail-tag">{movie.movieLanguage}</span>
+              )}
+              <span className="movie-detail-tag">
+                {movie.status || "Coming Soon"}
+              </span>
             </div>
 
-            <div className="movie-detail-score">
-              <strong>{Number(movie.rating || 0).toFixed(1)}</strong>
-              <small>{movie.numReviews || 0} đánh giá</small>
+            <div className="movie-detail-score-wrap">
+              <div className="movie-detail-stars">
+                {Array.from({ length: 5 }).map((_, starIdx) => {
+                  const rating = movie.rating || 0;
+                  const fill = starIdx + 1 <= rating / 2 ? "currentColor" : "none";
+                  return (
+                    <svg
+                      key={starIdx}
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill={fill}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      style={{ marginRight: "2px" }}
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  );
+                })}
+              </div>
+              <span className="movie-detail-rating-value">
+                {Number(movie.rating || 0).toFixed(1)}
+              </span>
+              <span className="movie-detail-reviews-count">
+                ({movie.numReviews || 0} đánh giá)
+              </span>
             </div>
 
             <div className="movie-detail-actions">
               <button
                 className="movie-detail-btn"
-                onClick={() => navigate(`/movie/${id}#book`)}
+                onClick={() => {
+                  const bookEl = document.getElementById("book");
+                  if (bookEl) {
+                    bookEl.scrollIntoView({ behavior: "smooth" });
+                  } else {
+                    navigate(`/movie/${id}#book`);
+                  }
+                }}
               >
-                Đặt vé ngay
+                Đặt Vé Ngay
               </button>
               {movie.trailerUrl && (
                 <button
                   className="movie-detail-secondary-btn"
                   onClick={() => window.open(movie.trailerUrl, "_blank")}
                 >
-                  Xem trailer
+                  Xem Trailer
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div className="movie-detail-meta">
-              <div className="movie-detail-meta-item">
-                <span>Thể loại</span>
-                <span>
-                  {Array.isArray(movie.genre)
-                    ? movie.genre.join(", ")
-                    : movie.genre || "Chưa cập nhật"}
-                </span>
-              </div>
-              <div className="movie-detail-meta-item">
-                <span>Thời lượng</span>
-                <span>
-                  {movie.duration ? `${movie.duration} phút` : "Chưa cập nhật"}
-                </span>
-              </div>
-              <div className="movie-detail-meta-item">
-                <span>Đạo diễn</span>
-                <span>{movie.director || "Chưa cập nhật"}</span>
-              </div>
-              <div className="movie-detail-meta-item">
-                <span>Khởi chiếu</span>
-                <span>{formatDate(movie.releaseDate)}</span>
-              </div>
-            </div>
+      {/* 2. MAIN CONTENT GRID */}
+      <div className="movie-detail-main-grid">
+        {/* Cột trái (70%) */}
+        <div className="movie-content-left">
+          <div className="movie-detail-description">
+            <h2 className="movie-content-section-title">Nội Dung Phim</h2>
+            <p className="movie-detail-overview">
+              {movie.synopsis || "Chưa có mô tả phim."}
+            </p>
+          </div>
 
-            <div className="movie-detail-description">
-              <div>
-                <h2 className="movie-detail-heading">Nội dung phim</h2>
-                <p className="movie-detail-overview">
-                  {movie.synopsis || "Chưa có mô tả phim."}
-                </p>
-              </div>
-
-              <div className="movie-detail-grid-bottom">
-                <div className="movie-detail-detail-card">
-                  <h3>Cast chính</h3>
-                  <div className="movie-detail-cast">
-                    {(movie.cast?.length ? movie.cast : ["Chưa cập nhật"]).map(
-                      (name, idx) => (
-                        <span key={idx} className="movie-detail-cast-item">
-                          {name}
-                        </span>
-                      ),
-                    )}
-                  </div>
-                </div>
-
-                <div className="movie-detail-detail-card">
-                  <h3>Thông tin bổ sung</h3>
-                  <ul className="movie-detail-detail-list">
-                    <li>
-                      <span>Trạng thái</span>
-                      <span>{movie.status || "Chưa cập nhật"}</span>
-                    </li>
-                    <li>
-                      <span>Ngôn ngữ</span>
-                      <span>{movie.movieLanguage || "Chưa cập nhật"}</span>
-                    </li>
-                    <li>
-                      <span>Điểm đánh giá</span>
-                      <span>
-                        {movie.rating ? movie.rating.toFixed(1) : "0.0"}
-                      </span>
-                    </li>
-                    <li>
-                      <span>Số review</span>
-                      <span>{movie.numReviews || 0}</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div className="movie-detail-footer">
-              <p>Thông tin chi tiết cập nhật theo dữ liệu phim.</p>
+          <div className="movie-detail-cast-section">
+            <h2 className="movie-content-section-title">Diễn Viên Chính</h2>
+            <div className="movie-detail-cast">
+              {(movie.cast?.length ? movie.cast : ["Chưa cập nhật"]).map(
+                (name, idx) => (
+                  <span key={idx} className="movie-detail-cast-item">
+                    {name}
+                  </span>
+                ),
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Cột phải (30%) */}
+        <div className="movie-content-right">
+          <div className="movie-detail-info-card">
+            <div className="movie-detail-info-list">
+              <div className="movie-detail-info-row">
+                <div className="movie-detail-info-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
+                <div className="movie-detail-info-text">
+                  <span className="movie-detail-info-label">Khởi chiếu</span>
+                  <span className="movie-detail-info-val">{formatDate(movie.releaseDate)}</span>
+                </div>
+              </div>
+
+              <div className="movie-detail-info-row">
+                <div className="movie-detail-info-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div className="movie-detail-info-text">
+                  <span className="movie-detail-info-label">Thời lượng</span>
+                  <span className="movie-detail-info-val">
+                    {movie.duration ? `${movie.duration} phút` : "Chưa cập nhật"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="movie-detail-info-row">
+                <div className="movie-detail-info-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div className="movie-detail-info-text">
+                  <span className="movie-detail-info-label">Đạo diễn</span>
+                  <span className="movie-detail-info-val">{movie.director || "Chưa cập nhật"}</span>
+                </div>
+              </div>
+
+              <div className="movie-detail-info-row">
+                <div className="movie-detail-info-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                  </svg>
+                </div>
+                <div className="movie-detail-info-text">
+                  <span className="movie-detail-info-label">Thể loại</span>
+                  <span className="movie-detail-info-val">
+                    {Array.isArray(movie.genre)
+                      ? movie.genre.join(", ")
+                      : movie.genre || "Chưa cập nhật"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="movie-detail-info-row">
+                <div className="movie-detail-info-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 8v8"></path>
+                    <path d="M8 12h8"></path>
+                  </svg>
+                </div>
+                <div className="movie-detail-info-text">
+                  <span className="movie-detail-info-label">Ngôn ngữ</span>
+                  <span className="movie-detail-info-val">{movie.movieLanguage || "Chưa cập nhật"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="movie-detail-footer-note">
+            Thông tin chi tiết được cập nhật theo dữ liệu hệ thống CinemaHub.
+          </p>
         </div>
       </div>
 
@@ -427,7 +470,6 @@ const MovieDetailPage = () => {
                         className={`showtime-date-btn ${selectedDate === dateStr ? "active" : ""}`}
                         onClick={() => {
                           setSelectedDate(dateStr);
-                          setSelectedCinema("");
                           setSelectedShowtime(null);
                           setSelectedSeats([]);
                         }}
@@ -439,30 +481,8 @@ const MovieDetailPage = () => {
                 </div>
               </div>
 
-              {/* Chọn Rạp (Chỉ hiển thị khi đã chọn ngày) */}
+              {/* Chọn Giờ (Chỉ hiển thị khi đã chọn ngày) */}
               {selectedDate && (
-                <div>
-                  <p style={{ fontSize: "0.9rem", color: "var(--md-muted)", marginBottom: "8px" }}>Chọn rạp chiếu:</p>
-                  <div className="showtime-cinemas-list">
-                    {filteredCinemas.map((cinema) => (
-                      <button
-                        key={cinema._id}
-                        className={`showtime-cinema-btn ${selectedCinema === cinema._id ? "active" : ""}`}
-                        onClick={() => {
-                          setSelectedCinema(cinema._id);
-                          setSelectedShowtime(null);
-                          setSelectedSeats([]);
-                        }}
-                      >
-                        {cinema.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Chọn Giờ (Chỉ hiển thị khi đã chọn rạp và ngày) */}
-              {selectedDate && selectedCinema && (
                 <div>
                   <p style={{ fontSize: "0.9rem", color: "var(--md-muted)", marginBottom: "8px" }}>Chọn giờ chiếu:</p>
                   <div className="showtime-times-list">
@@ -495,7 +515,14 @@ const MovieDetailPage = () => {
               </div>
 
               <div className="seat-grid">
-                {selectedShowtime.seatStatus?.map((seat) => {
+                {(selectedShowtime.seatStatus && selectedShowtime.seatStatus.length > 0
+                  ? selectedShowtime.seatStatus
+                  : Array.from({ length: 60 }).map((_, idx) => {
+                      const row = ["A", "B", "C", "D", "E", "F"][Math.floor(idx / 10)];
+                      const col = (idx % 10) + 1;
+                      return { seatNumber: `${row}${col}`, status: "Available" };
+                    })
+                ).map((seat) => {
                   const isBooked = seat.status === "Booked";
                   const isSelected = selectedSeats.includes(seat.seatNumber);
                   let seatClass = "";
