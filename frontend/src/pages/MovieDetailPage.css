@@ -339,3 +339,402 @@
     align-items: flex-start;
   }
 }
+
+/* ================= BOOKING FLOW STYLES ================= */
+.movie-detail-booking-section {
+  max-width: 1220px;
+  margin: 40px auto 0;
+  background: var(--md-card);
+  border: 1px solid var(--md-border);
+  border-radius: 28px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  scroll-margin-top: 20px;
+}
+
+.movie-booking-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #fff, var(--md-muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  border-bottom: 1px solid var(--md-border);
+  padding-bottom: 12px;
+}
+
+.movie-booking-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.movie-booking-step-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--md-text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.movie-booking-step-title span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--md-accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.9rem;
+}
+
+/* 1. Showtime Selectors */
+.showtime-selectors-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.showtime-dates-list,
+.showtime-cinemas-list,
+.showtime-times-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.showtime-date-btn,
+.showtime-cinema-btn,
+.showtime-time-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 18px;
+  color: var(--md-text);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.showtime-date-btn:hover,
+.showtime-cinema-btn:hover,
+.showtime-time-btn:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: var(--md-accent);
+}
+
+.showtime-date-btn.active,
+.showtime-cinema-btn.active,
+.showtime-time-btn.active {
+  background: var(--md-accent);
+  border-color: var(--md-accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
+/* 2. Seat Map */
+.seat-map-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 32px;
+  border-radius: 20px;
+  border: 1px solid var(--md-border);
+}
+
+.seat-screen {
+  width: 100%;
+  max-width: 500px;
+  height: 8px;
+  background: linear-gradient(90deg, transparent, var(--md-accent), transparent);
+  border-radius: 4px;
+  position: relative;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 25px rgba(124, 58, 237, 0.5);
+}
+
+.seat-screen-text {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: var(--md-muted);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.seat-item {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: var(--md-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.seat-item:hover:not(.booked) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.08);
+}
+
+.seat-item.booked {
+  background: rgba(229, 9, 20, 0.18);
+  border-color: rgba(229, 9, 20, 0.35);
+  color: #ef4444;
+  cursor: not-allowed;
+}
+
+.seat-item.selected {
+  background: #10b981;
+  border-color: #10b981;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.seat-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--md-muted);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.legend-color.available {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.legend-color.selected {
+  background: #10b981;
+}
+
+.legend-color.booked {
+  background: rgba(229, 9, 20, 0.18);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+}
+
+/* 3. Food Items Selector */
+.food-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.food-item-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--md-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.food-item-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.food-item-img {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.food-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.food-item-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--md-text);
+  margin: 0;
+}
+
+.food-item-price {
+  font-size: 0.85rem;
+  color: var(--md-yellow);
+  font-weight: 600;
+}
+
+.food-quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.food-qty-btn {
+  background: none;
+  border: none;
+  color: var(--md-text);
+  font-weight: bold;
+  font-size: 1rem;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  border-radius: 4px;
+}
+
+.food-qty-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.food-qty-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* 4. Payment & Checkout */
+.booking-summary-card {
+  background: rgba(124, 58, 237, 0.06);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: var(--md-muted);
+}
+
+.summary-row.total {
+  border-top: 1px solid rgba(124, 58, 237, 0.2);
+  padding-top: 16px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--md-text);
+}
+
+.summary-row.total span:last-child {
+  color: var(--md-yellow);
+}
+
+.payment-method-selector {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.payment-method-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.payment-method-label:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.payment-method-input {
+  display: none;
+}
+
+.payment-method-input:checked + .payment-method-label {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: var(--md-accent);
+  color: #fff;
+}
+
+.submit-booking-btn {
+  background: linear-gradient(135deg, var(--md-accent), var(--md-accent-strong));
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 16px 32px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 12px;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+.submit-booking-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.submit-booking-btn:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.25);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .movie-detail-booking-section {
+    padding: 20px;
+  }
+  .food-items-grid {
+    grid-template-columns: 1fr;
+  }
+}

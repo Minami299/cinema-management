@@ -53,11 +53,12 @@ class BookingService {
       .populate({
         path: "showtime",
         populate: [
-          { path: "movie", select: "title" },
+          { path: "movie", select: "title posterUrl" },
           { path: "cinema", select: "name" },
           { path: "room", select: "name" },
         ],
       })
+      .populate("foods.foodItem")
       .sort({ createdAt: -1 });
   }
 

@@ -323,6 +323,16 @@
   color: #10b981;
   border: 1px solid #10b98140;
 }
+.pp-status-badge--pending {
+  background: #f59e0b20;
+  color: #f59e0b;
+  border: 1px solid #f59e0b40;
+}
+.pp-status-badge--cancelled {
+  background: #ef444420;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+}
 .pp-booking-meta {
   display: flex;
   gap: 20px;
