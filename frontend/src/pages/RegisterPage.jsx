@@ -27,7 +27,7 @@ const RegisterPage = () => {
       case "STAFF":
         return "/staff/dashboard";
       case "CUSTOMER":
-        return "/profile";
+        return "/";
       default:
         return "/";
     }
