@@ -3,9 +3,7 @@ const router = express.Router();
 const foodItemController = require("../controllers/foodItemController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const authorizeRoles = require("../middlewares/roleMiddleware");
-
 const staffOnly = [authMiddleware, authorizeRoles("ADMIN", "MANAGER", "STAFF")];
-
 router.get("/", foodItemController.getAll);
 router.get("/available", foodItemController.getAvailable);
 router.get("/type/:type", foodItemController.getByType);

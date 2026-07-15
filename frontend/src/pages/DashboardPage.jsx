@@ -39,7 +39,7 @@ const DashboardPage = () => {
         break;
       case "CUSTOMER":
       default:
-        navigate("/profile", { replace: true });
+        navigate("/", { replace: true });
         break;
     }
   }, [user, loading, navigate]);

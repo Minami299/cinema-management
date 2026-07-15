@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Role = require("../models/Role");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const emailService = require("../services/emailService");
 
 // Cấu hình cookie dùng chung để tránh lặp code (DRY)
 const COOKIE_OPTIONS = {
@@ -235,6 +236,81 @@ class AuthController {
       });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, message: "Vui lòng cung cấp email." });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "Không tìm thấy tài khoản với email này." });
+      }
+
+      // Sinh mã OTP 6 số ngẫu nhiên
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      user.resetPasswordOTP = otp;
+      user.resetPasswordExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 phút hiệu lực
+
+      await user.save();
+
+      // Gửi email OTP không đồng bộ
+      emailService.sendResetPasswordOTPEmail(user.email, user.name, otp);
+
+      return res.status(200).json({
+        success: true,
+        message: "Mã OTP đã được gửi về email của bạn.",
+      });
+    } catch (error) {
+      console.error("Lỗi forgotPassword:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async resetPassword(req, res) {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!email || !otp || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Vui lòng cung cấp đầy đủ email, mã OTP và mật khẩu mới.",
+        });
+      }
+
+      const user = await User.findOne({
+        email,
+        resetPasswordOTP: otp,
+        resetPasswordExpires: { $gt: new Date() },
+      });
+
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "Mã OTP không chính xác hoặc đã hết hiệu lực.",
+        });
+      }
+
+      // Hash mật khẩu mới
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+
+      // Xóa OTP
+      user.resetPasswordOTP = undefined;
+      user.resetPasswordExpires = undefined;
+
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.",
+      });
+    } catch (error) {
+      console.error("Lỗi resetPassword:", error);
+      return res.status(500).json({ success: false, message: error.message });
     }
   }
 }

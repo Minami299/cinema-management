@@ -143,6 +143,7 @@
   font-size: 1.55rem;
   font-weight: 800;
   margin: 0 0 4px;
+  color: #ffffff;
 }
 .pp-user-email {
   font-size: 0.9rem;
@@ -323,6 +324,16 @@
   color: #10b981;
   border: 1px solid #10b98140;
 }
+.pp-status-badge--pending {
+  background: #f59e0b20;
+  color: #f59e0b;
+  border: 1px solid #f59e0b40;
+}
+.pp-status-badge--cancelled {
+  background: #ef444420;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+}
 .pp-booking-meta {
   display: flex;
   gap: 20px;
@@ -429,6 +440,7 @@
   font-size: 1.1rem;
   font-weight: 800;
   margin: 0 0 24px;
+  color: #ffffff;
 }
 .pp-info-grid {
   display: grid;
@@ -538,4 +550,351 @@
 .pp-logout-btn:hover {
   background: #ef44440f;
   border-color: #ef4444;
+}
+
+/* TICKET MODAL OVERLAY */
+.ticket-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* TICKET WRAPPER (CLASSIC TICKET LAYOUT) */
+.ticket-card-wrapper {
+  background-color: #1a1a1f;
+  border-radius: 16px;
+  display: flex;
+  width: 100%;
+  max-width: 780px;
+  min-height: 320px;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  overflow: visible;
+  animation: ticketEntrance 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes ticketEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* TICKET LEFT SECTION */
+.ticket-left {
+  flex: 2.2;
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.ticket-movie-poster {
+  width: 130px;
+  height: 190px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ticket-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.ticket-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 4px;
+  width: fit-content;
+  letter-spacing: 0.5px;
+}
+
+.ticket-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.ticket-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ticket-grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.grid-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.5px;
+}
+
+.grid-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e5e7eb;
+}
+
+.grid-val.highlight {
+  color: #ef4444;
+}
+
+.ticket-grid-item.text-large .grid-val {
+  font-size: 1.05rem;
+}
+
+.ticket-foods-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.foods-list {
+  font-size: 0.8rem;
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+/* TICKET DIVIDER WITH HOLES */
+.ticket-divider {
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: visible;
+  background-color: transparent;
+}
+
+.divider-hole {
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.85); /* Trùng với màu nền overlay */
+  border-radius: 50%;
+  position: absolute;
+  left: 0;
+  z-index: 10;
+}
+
+.divider-hole-top {
+  top: -12px;
+}
+
+.divider-hole-bottom {
+  bottom: -12px;
+}
+
+.divider-dashed-line {
+  height: 100%;
+  border-left: 2px dashed rgba(255, 255, 255, 0.12);
+  margin-left: -1px;
+}
+
+/* TICKET RIGHT SECTION (STUB) */
+.ticket-right {
+  flex: 1;
+  background-color: #151518;
+  border-radius: 0 16px 16px 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ticket-right-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ticket-sub-label {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ticket-sub-title {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: #ffffff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-sub-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.ticket-sub-grid div {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-sub-grid strong {
+  color: #ffffff;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.ticket-qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket-qr-code img {
+  background-color: #ffffff;
+  padding: 6px;
+  border-radius: 8px;
+  width: 86px;
+  height: 86px;
+  display: block;
+}
+
+.ticket-id {
+  font-size: 0.65rem;
+  font-family: monospace;
+  color: #9ca3af;
+}
+
+/* CLOSE BUTTON */
+.ticket-close-btn {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: #e50914;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  line-height: 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(229, 9, 20, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 20;
+}
+
+.ticket-close-btn:hover {
+  background: #b80710;
+  transform: scale(1.1);
+}
+
+/* RESPONSIVE TICKET LAYOUT */
+@media (max-width: 680px) {
+  .ticket-card-wrapper {
+    flex-direction: column;
+    max-width: 360px;
+  }
+  .ticket-left {
+    padding: 20px;
+  }
+  .ticket-right {
+    border-radius: 0 0 16px 16px;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 20px;
+    flex-direction: row;
+    gap: 20px;
+  }
+  .ticket-right-info {
+    flex: 1.2;
+  }
+  .ticket-qr-code {
+    flex: 1;
+  }
+  .ticket-divider {
+    width: 100%;
+    height: 24px;
+    flex-direction: row;
+  }
+  .divider-hole-top {
+    left: -12px;
+    top: 0;
+  }
+  .divider-hole-bottom {
+    right: -12px;
+    bottom: 0;
+    left: auto;
+  }
+  .divider-dashed-line {
+    width: 100%;
+    height: 2px;
+    border-left: none;
+    border-top: 2px dashed rgba(255, 255, 255, 0.12);
+    margin-top: 11px;
+    margin-left: 0;
+  }
+}
+
+.ticket-cancel-btn {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+  margin-top: 10px;
+  align-self: flex-start;
+}
+
+.ticket-cancel-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
+}
+
+.ticket-cancel-btn:active {
+  transform: translateY(0);
 }

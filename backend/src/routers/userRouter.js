@@ -16,6 +16,7 @@ router.post("/", authMiddleware, authorizeRoles("ADMIN"), userController.create)
 // Cập nhật user: cần đăng nhập (chính user hoặc ADMIN)
 router.put("/:id", authMiddleware, userController.update);
 router.patch("/:id/password", authMiddleware, userController.updatePassword);
+router.put("/:id/status", authMiddleware, authorizeRoles("ADMIN"), userController.toggleStatus);
 
 // Yêu thích: cần đăng nhập
 router.post("/:id/favorites", authMiddleware, userController.addFavorite);

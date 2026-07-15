@@ -4,40 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import axiosClient from "../services/axiosClient";
 import "./ProfilePage.css";
 
-const TIER_CONFIG = {
-  bronze: {
-    label: "Bronze Member",
-    color: "#cd7f32",
-    next: "Silver",
-    nextPoints: 1000,
-  },
-  silver: {
-    label: "Silver Member",
-    color: "#9ca3af",
-    next: "Gold",
-    nextPoints: 2000,
-  },
-  gold: {
-    label: "Gold Member",
-    color: "#ffb400",
-    next: "Platinum",
-    nextPoints: 3000,
-  },
-  platinum: {
-    label: "Platinum Member",
-    color: "#a78bfa",
-    next: null,
-    nextPoints: null,
-  },
-};
-
-function getTier(points) {
-  if (points >= 3000) return "platinum";
-  if (points >= 2000) return "gold";
-  if (points >= 1000) return "silver";
-  return "bronze";
-}
-
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
@@ -50,9 +16,8 @@ const ProfilePage = () => {
   const [favorites, setFavorites] = useState([]);
   const [isLoadingFav, setIsLoadingFav] = useState(false);
 
-  const rewardPoints = 2450;
-  const tier = getTier(rewardPoints);
-  const tierConfig = TIER_CONFIG[tier];
+  const [bookings, setBookings] = useState([]);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
 
   const [displayUser, setDisplayUser] = useState({
     _id: "",
@@ -68,6 +33,7 @@ const ProfilePage = () => {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   // Khởi tạo thông tin người dùng từ Auth Context
   useEffect(() => {
@@ -79,8 +45,10 @@ const ProfilePage = () => {
         phone: user.phone || "",
         createdAt: user.createdAt || "",
       };
-      setDisplayUser(init);
-      setFormData({ name: init.name, email: init.email, phone: init.phone });
+      setTimeout(() => {
+        setDisplayUser(init);
+        setFormData({ name: init.name, email: init.email, phone: init.phone });
+      }, 0);
     }
   }, [user]);
 
@@ -108,6 +76,26 @@ const ProfilePage = () => {
     };
 
     fetchFavorites();
+  }, [displayUser?._id]);
+
+  useEffect(() => {
+    if (!displayUser?._id) return;
+
+    const fetchBookings = async () => {
+      setIsLoadingBookings(true);
+      try {
+        const response = await axiosClient.get(`/bookings/history/${displayUser._id}`);
+        if (response.data.success) {
+          setBookings(response.data.data);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy lịch sử đặt vé:", error.message);
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    };
+
+    fetchBookings();
   }, [displayUser?._id]);
 
   const handleInputChange = (e) => {
@@ -153,21 +141,12 @@ const ProfilePage = () => {
   const handleSaveProfile = async () => {
     if (!validateProfile()) return;
     try {
-      const token =
-        localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:9999/api/users/${displayUser._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify(formData),
-        },
+      const response = await axiosClient.put(
+        `/users/${displayUser._id}`,
+        formData,
       );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Có lỗi xảy ra!");
+      const result = response.data;
+      if (!result.success) throw new Error(result.message || "Có lỗi xảy ra!");
       const updated = result.data;
       localStorage.setItem("user", JSON.stringify(updated));
       setDisplayUser({
@@ -181,31 +160,22 @@ const ProfilePage = () => {
       alert("Cập nhật thông tin thành công!");
       setIsEditing(false);
     } catch (e) {
-      alert(e.message);
+      alert(e.response?.data?.message || e.message);
     }
   };
 
   const handleSavePassword = async () => {
     if (!validatePassword()) return;
     try {
-      const token =
-        localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:9999/api/users/${displayUser._id}/password`,
+      const response = await axiosClient.patch(
+        `/users/${displayUser._id}/password`,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify({
-            oldPassword: passwordData.oldPassword,
-            newPassword: passwordData.newPassword,
-          }),
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
         },
       );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Đổi mật khẩu thất bại!");
+      const result = response.data;
+      if (!result.success) throw new Error(result.message || "Đổi mật khẩu thất bại!");
       alert("Đổi mật khẩu thành công!");
       setIsChangingPassword(false);
       setPasswordData({
@@ -214,7 +184,7 @@ const ProfilePage = () => {
         confirmPassword: "",
       });
     } catch (e) {
-      alert(e.message);
+      alert(e.response?.data?.message || e.message);
     }
   };
 
@@ -238,6 +208,47 @@ const ProfilePage = () => {
     if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) logout();
   };
 
+  const handleCancelBooking = async (booking) => {
+    const movieTitle = booking.showtime?.movie?.title || "Phim";
+    const showDate = booking.showtime?.date
+      ? new Date(booking.showtime.date).toLocaleDateString("vi-VN")
+      : "N/A";
+    const showTime = booking.showtime?.startTime || "N/A";
+    const seatsStr = booking.tickets?.map((t) => t.seatNumber).join(", ") || "N/A";
+    const totalVal = booking.totalAmount
+      ? booking.totalAmount.toLocaleString("vi-VN") + " VNĐ"
+      : "0 VNĐ";
+
+    const confirmMsg = `Bạn có chắc chắn muốn hủy đơn đặt vé này không?\n\nThông tin vé hủy:\n- Phim: ${movieTitle}\n- Ngày chiếu: ${showDate}\n- Suất chiếu: ${showTime}\n- Ghế: ${seatsStr}\n- Tổng tiền: ${totalVal}\n\nSau khi hủy, vé không thể phục hồi và ghế sẽ được giải phóng!`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const response = await axiosClient.put(`/bookings/${booking._id || booking.id}/cancel`);
+      if (response.data && response.data.success) {
+        alert("Hủy vé thành công! Email xác nhận hủy đã được gửi.");
+        
+        // Cập nhật lại danh sách đặt vé ở giao diện
+        setBookings((prev) =>
+          prev.map((b) =>
+            (b._id === booking._id || b.id === booking.id)
+              ? { ...b, status: "Cancelled", payment: { ...b.payment, status: "Cancelled" } }
+              : b
+          )
+        );
+        
+        // Cập nhật lại vé đang mở trong modal
+        setSelectedTicket((prev) =>
+          prev && (prev._id === booking._id || prev.id === booking.id)
+            ? { ...prev, status: "Cancelled", payment: { ...prev.payment, status: "Cancelled" } }
+            : prev
+        );
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || error.message || "Hủy vé thất bại.");
+    }
+  };
+
   const initials = displayUser.name
     ? displayUser.name
         .split(" ")
@@ -253,10 +264,6 @@ const ProfilePage = () => {
         year: "numeric",
       })
     : "January 2024";
-
-  const progressPct = tierConfig.nextPoints
-    ? Math.min((rewardPoints / tierConfig.nextPoints) * 100, 100)
-    : 100;
 
   return (
     <div className="pp-page">
@@ -336,50 +343,13 @@ const ProfilePage = () => {
               <h1 className="pp-user-name">{displayUser.name || "User"}</h1>
               <p className="pp-user-email">{displayUser.email}</p>
               <div className="pp-user-badges">
-                <span
-                  className="pp-tier-badge"
-                  style={{
-                    background: tierConfig.color + "26",
-                    color: tierConfig.color,
-                    border: `1px solid ${tierConfig.color}66`,
-                  }}
-                >
-                  {tierConfig.label}
-                </span>
                 <span className="pp-member-since">
                   Member since {memberSince}
                 </span>
               </div>
             </div>
           </div>
-          <div className="pp-reward-box">
-            <span className="pp-reward-label">Reward Points</span>
-            <span className="pp-reward-value">
-              {rewardPoints.toLocaleString()}
-            </span>
-          </div>
         </div>
-
-        {/* Progress Bar */}
-        {tierConfig.next && (
-          <div className="pp-progress-card">
-            <div className="pp-progress-header">
-              <span className="pp-progress-label">
-                Progress to {tierConfig.next}
-              </span>
-              <span className="pp-progress-value">
-                {rewardPoints.toLocaleString()} /{" "}
-                {tierConfig.nextPoints.toLocaleString()} points
-              </span>
-            </div>
-            <div className="pp-progress-track">
-              <div
-                className="pp-progress-fill"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="pp-tabs">
@@ -450,24 +420,80 @@ const ProfilePage = () => {
         {/* Tab Content */}
         {activeTab === "booking" && (
           <div className="pp-tab-content">
-            {/* Nếu bạn có state hoặc dữ liệu cho MOCK_BOOKINGS thì map ở đây */}
-            {typeof MOCK_BOOKINGS !== "undefined" &&
-              MOCK_BOOKINGS.map((b) => (
-                <div className="pp-booking-card" key={b.id}>
-                  <img
-                    className="pp-booking-poster"
-                    src={b.poster}
-                    alt={b.movie}
-                    onError={(e) => {
-                      e.target.style.background = "#1e1e24";
-                      e.target.src = "";
-                    }}
-                  />
-                  <div className="pp-booking-info">
-                    <div className="pp-booking-top">
-                      <div>
-                        <h3 className="pp-booking-title">{b.movie}</h3>
-                        <p className="pp-booking-cinema">
+            {isLoadingBookings ? (
+              <p className="pp-loading-text" style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                Đang tải lịch sử đặt vé...
+              </p>
+            ) : bookings.length === 0 ? (
+              <p className="pp-empty-text" style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                Bạn chưa đặt vé nào.
+              </p>
+            ) : (
+              bookings.map((b) => {
+                const movieTitle = b.showtime?.movie?.title || "Phim chưa cập nhật";
+                const posterUrl = b.showtime?.movie?.posterUrl || "https://via.placeholder.com/90x130?text=No+Poster";
+                const cinemaName = b.showtime?.cinema?.name || "Rạp chưa cập nhật";
+                const roomName = b.showtime?.room?.name || "N/A";
+                const showDate = b.showtime?.date
+                  ? new Date(b.showtime.date).toLocaleDateString("vi-VN")
+                  : "N/A";
+                const showTime = b.showtime?.startTime || "N/A";
+                const seatsStr = b.tickets?.map((t) => t.seatNumber).join(", ") || "N/A";
+                const totalVal = b.totalAmount
+                  ? b.totalAmount.toLocaleString("vi-VN") + " VNĐ"
+                  : "0 VNĐ";
+
+                let statusText = "Chờ thanh toán";
+                let statusClass = "pp-status-badge--pending";
+                if (b.status === "Confirmed") {
+                  statusText = "Đã xác nhận";
+                  statusClass = "pp-status-badge--completed";
+                } else if (b.status === "Cancelled") {
+                  statusText = "Đã hủy";
+                  statusClass = "pp-status-badge--cancelled";
+                }
+
+                return (
+                  <div className="pp-booking-card" key={b._id || b.id}>
+                    <img
+                      className="pp-booking-poster"
+                      src={posterUrl}
+                      alt={movieTitle}
+                      onError={(e) => {
+                        e.target.style.background = "#1e1e24";
+                        e.target.src = "https://via.placeholder.com/90x130?text=No+Poster";
+                      }}
+                    />
+                    <div className="pp-booking-info">
+                      <div className="pp-booking-top">
+                        <div>
+                          <h3 className="pp-booking-title">{movieTitle}</h3>
+                          <p className="pp-booking-cinema">
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            {cinemaName} - Phòng {roomName}
+                          </p>
+                          {b.foods && b.foods.length > 0 && (
+                            <p className="pp-booking-cinema" style={{ marginTop: "4px", fontSize: "0.8rem", color: "#a78bfa" }}>
+                              Đồ ăn: {b.foods.map(f => `${f.foodItem?.name || "Combo"} (x${f.quantity})`).join(", ")}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`pp-status-badge ${statusClass}`}>
+                          {statusText}
+                        </span>
+                      </div>
+                      <div className="pp-booking-meta">
+                        <span className="pp-meta-item">
                           <svg
                             width="13"
                             height="13"
@@ -476,71 +502,56 @@ const ProfilePage = () => {
                             stroke="currentColor"
                             strokeWidth="2"
                           >
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
+                            <rect x="3" y="4" width="18" height="18" rx="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
                           </svg>
-                          {b.cinema}
-                        </p>
+                          {showDate}
+                        </span>
+                        <span className="pp-meta-item">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          {showTime}
+                        </span>
+                        <span className="pp-meta-item">
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <rect x="3" y="11" width="18" height="11" rx="2" />
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                          </svg>
+                          Ghế: {seatsStr}
+                        </span>
                       </div>
-                      <span className="pp-status-badge pp-status-badge--completed">
-                        {b.status}
-                      </span>
-                    </div>
-                    <div className="pp-booking-meta">
-                      <span className="pp-meta-item">
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                      <div className="pp-booking-footer">
+                        <span className="pp-booking-total">Tổng tiền: {totalVal}</span>
+                        <button 
+                          className="pp-view-ticket-btn"
+                          onClick={() => setSelectedTicket(b)}
                         >
-                          <rect x="3" y="4" width="18" height="18" rx="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        {b.date}
-                      </span>
-                      <span className="pp-meta-item">
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        {b.time}
-                      </span>
-                      <span className="pp-meta-item">
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect x="3" y="11" width="18" height="11" rx="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        Seats: {b.seats}
-                      </span>
-                    </div>
-                    <div className="pp-booking-footer">
-                      <span className="pp-booking-total">Total: {b.total}</span>
-                      <button className="pp-view-ticket-btn">
-                        View Ticket
-                      </button>
+                          Chi tiết vé
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })
+            )}
           </div>
         )}
 
@@ -557,8 +568,8 @@ const ProfilePage = () => {
                   <div className="pp-fav-poster-wrap">
                     <img
                       className="pp-fav-poster"
-                      // Đọc chính xác trường .poster từ MongoDB trả về
-                      src={movie.poster || "placeholder-image-url.png"}
+                      // Đọc chính xác trường .posterUrl từ MongoDB trả về
+                      src={movie.posterUrl || "placeholder-image-url.png"}
                       alt={movie.title}
                       onError={(e) => {
                         e.target.onerror = null;
@@ -764,6 +775,100 @@ const ProfilePage = () => {
           </div>
         )}
       </main>
+      {selectedTicket && (
+        <div className="ticket-modal-overlay" onClick={() => setSelectedTicket(null)}>
+          <div className="ticket-card-wrapper" onClick={(e) => e.stopPropagation()}>
+            {/* Cuống vé trái */}
+            <div className="ticket-left">
+              <div className="ticket-movie-poster" style={{ backgroundImage: `url(${selectedTicket.showtime?.movie?.posterUrl || "https://via.placeholder.com/150x220?text=No+Poster"})` }}></div>
+              <div className="ticket-info">
+                <span className="ticket-badge">{
+                  selectedTicket.status === "Confirmed" ? "ĐÃ XÁC NHẬN" :
+                  selectedTicket.status === "Cancelled" ? "ĐÃ HỦY" : "CHỜ THANH TOÁN"
+                }</span>
+                <h2 className="ticket-title">{selectedTicket.showtime?.movie?.title}</h2>
+                <div className="ticket-grid">
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">RẠP</span>
+                    <span className="grid-val">{selectedTicket.showtime?.cinema?.name || "CinemaHub"}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">PHÒNG</span>
+                    <span className="grid-val">{selectedTicket.showtime?.room?.name}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">NGÀY CHIẾU</span>
+                    <span className="grid-val">{selectedTicket.showtime?.date ? new Date(selectedTicket.showtime.date).toLocaleDateString("vi-VN") : "N/A"}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">SUẤT CHIẾU</span>
+                    <span className="grid-val">{selectedTicket.showtime?.startTime}</span>
+                  </div>
+                  <div className="ticket-grid-item text-large">
+                    <span className="grid-label">GHẾ</span>
+                    <span className="grid-val highlight">{selectedTicket.tickets?.map(t => t.seatNumber).join(", ")}</span>
+                  </div>
+                  <div className="ticket-grid-item text-large">
+                    <span className="grid-label">TỔNG TIỀN</span>
+                    <span className="grid-val highlight">{(selectedTicket.totalAmount || 0).toLocaleString("vi-VN")}đ</span>
+                  </div>
+                </div>
+                {selectedTicket.foods && selectedTicket.foods.length > 0 && (
+                  <div className="ticket-foods-section">
+                    <span className="grid-label">ĐỒ ĂN KÈM:</span>
+                    <span className="foods-list">{selectedTicket.foods.map(f => `${f.foodItem?.name || "Combo"} (x${f.quantity})`).join(", ")}</span>
+                  </div>
+                )}
+                {selectedTicket.status !== "Cancelled" && (
+                  <button 
+                    className="ticket-cancel-btn"
+                    onClick={() => handleCancelBooking(selectedTicket)}
+                  >
+                    Hủy Vé
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Dải phân cách cuống vé răng cưa */}
+            <div className="ticket-divider">
+              <div className="divider-hole divider-hole-top"></div>
+              <div className="divider-dashed-line"></div>
+              <div className="divider-hole divider-hole-bottom"></div>
+            </div>
+
+            {/* Cuống vé phải (Soát vé) */}
+            <div className="ticket-right">
+              <div className="ticket-right-info">
+                <span className="ticket-sub-label">CinemaHub ticket</span>
+                <h3 className="ticket-sub-title">{selectedTicket.showtime?.movie?.title}</h3>
+                <div className="ticket-sub-grid">
+                  <div>
+                    <span>PHÒNG</span>
+                    <strong>{selectedTicket.showtime?.room?.name}</strong>
+                  </div>
+                  <div>
+                    <span>SUẤT</span>
+                    <strong>{selectedTicket.showtime?.startTime}</strong>
+                  </div>
+                  <div>
+                    <span>GHẾ</span>
+                    <strong>{selectedTicket.tickets?.map(t => t.seatNumber).join(", ")}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="ticket-qr-code">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`VE_${selectedTicket._id || selectedTicket.id}`)}`} 
+                  alt="Ticket QR Code" 
+                />
+                <span className="ticket-id">ID: {selectedTicket._id ? selectedTicket._id.substring(selectedTicket._id.length - 8).toUpperCase() : "N/A"}</span>
+              </div>
+            </div>
+            <button className="ticket-close-btn" onClick={() => setSelectedTicket(null)}>×</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

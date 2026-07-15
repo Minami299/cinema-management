@@ -20,8 +20,8 @@ class UserService {
   async getUserById(id) {
     return await User.findById(id)
       .populate("role")
-      // SỬA TẠI ĐÂY: Đổi "imageUrl" thành "poster"
-      .populate("favorites", "title poster duration");
+      // SỬA TẠI ĐÂY: Đổi "imageUrl" thành "posterUrl"
+      .populate("favorites", "title posterUrl duration");
   }
 
   async getUserByEmail(email) {
@@ -56,6 +56,14 @@ class UserService {
 
   async deleteUser(id) {
     return await User.findByIdAndDelete(id);
+  }
+
+  async toggleUserStatus(id, isActive) {
+    return await User.findByIdAndUpdate(
+      id,
+      { isActive: Boolean(isActive) },
+      { new: true, runValidators: true },
+    ).populate("role");
   }
 
   async addFavoriteMovie(userId, movieId) {

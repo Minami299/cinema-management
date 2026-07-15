@@ -1,18 +1,32 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+
 import PrivateRoute from "./routes/PrivateRoute";
 import RoleRoute from "./routes/RoleRoute";
+
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthLayout from "./pages/AuthLayout";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import MovieDetailPage from "./pages/MovieDetailPage";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+
+// ================= ADMIN =================
+import AdminLayout from "./pages/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import MovieManagement from "./pages/admin/MovieManagement";
+import UserManagement from "./pages/admin/UserManagement";
+import RoleManagement from "./pages/admin/RoleManagement";
+import Settings from "./pages/admin/Settings";
+
+// ================= MANAGER =================
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
+
+// ================= STAFF =================
 import StaffDashboard from "./pages/staff/StaffDashboard";
 import StaffTicketsPage from "./pages/staff/StaffTicketsPage";
 import StaffFoodPage from "./pages/staff/StaffFoodPage";
@@ -23,20 +37,25 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* ================= PUBLIC ================= */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MovieDetailPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          {/* Auth routes */}
+          {/* ================= AUTH ================= */}
           <Route path="/login" element={<AuthLayout />}>
             <Route index element={<LoginPage />} />
           </Route>
+
           <Route path="/register" element={<AuthLayout />}>
             <Route index element={<RegisterPage />} />
           </Route>
 
-          {/* Dashboard router: tự redirect theo role */}
+          <Route path="/forgot-password" element={<AuthLayout />}>
+            <Route index element={<ForgotPasswordPage />} />
+          </Route>
+
+          {/* ================= REDIRECT DASHBOARD ================= */}
           <Route
             path="/dashboard"
             element={
@@ -46,7 +65,7 @@ function App() {
             }
           />
 
-          {/* Profile: tất cả user đã đăng nhập */}
+          {/* ================= PROFILE ================= */}
           <Route
             path="/profile"
             element={
@@ -56,17 +75,24 @@ function App() {
             }
           />
 
-          {/* ADMIN dashboard */}
+          {/* ================= ADMIN ================= */}
           <Route
-            path="/admin/dashboard"
+            path="/admin"
             element={
               <RoleRoute allowedRoles={["ADMIN"]}>
-                <AdminDashboard />
+                <AdminLayout />
               </RoleRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="movies" element={<MovieManagement />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="roles" element={<RoleManagement />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
 
-          {/* MANAGER dashboard */}
+          {/* ================= MANAGER ================= */}
           <Route
             path="/manager/dashboard"
             element={
@@ -76,7 +102,7 @@ function App() {
             }
           />
 
-          {/* STAFF dashboard */}
+          {/* ================= STAFF ================= */}
           <Route
             path="/staff/dashboard"
             element={
@@ -102,7 +128,7 @@ function App() {
             }
           />
 
-          {/* 404 */}
+          {/* ================= 404 ================= */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
