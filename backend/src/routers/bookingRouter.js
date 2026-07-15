@@ -9,6 +9,19 @@ router.get("/history/:userId", authMiddleware, bookingController.getHistory);
 router.put("/:id/cancel", authMiddleware, bookingController.cancelBooking);
 
 router.get(
+  "/",
+  authMiddleware,
+  authorizeRoles("ADMIN", "MANAGER", "STAFF"),
+  bookingController.getAll,
+);
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  authorizeRoles("ADMIN", "MANAGER", "STAFF"),
+  bookingController.updateStatus,
+);
+
+router.get(
   "/all",
   authMiddleware,
   authorizeRoles("ADMIN", "MANAGER"),

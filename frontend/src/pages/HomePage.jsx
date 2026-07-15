@@ -35,6 +35,7 @@ const HomePage = () => {
       : user?.role || "",
   ).toUpperCase();
   const homePath = user && roleName !== "CUSTOMER" ? "/dashboard" : "/";
+  const canManageFood = ["STAFF", "MANAGER", "ADMIN"].includes(roleName);
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -308,6 +309,24 @@ const HomePage = () => {
             <a href="#promotions" className="nav-item-link">
               Promotions
             </a>
+            {canManageFood && (
+              <>
+                <button
+                  type="button"
+                  className="nav-item-link"
+                  onClick={() => navigate("/staff/tickets")}
+                >
+                  List Tickets
+                </button>
+                <button
+                  type="button"
+                  className="nav-item-link"
+                  onClick={() => navigate("/staff/food")}
+                >
+                  Food & Drink
+                </button>
+              </>
+            )}
             <a href="#contact" className="nav-item-link">
               Contact
             </a>

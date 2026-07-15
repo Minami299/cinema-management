@@ -1,388 +1,131 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  createFoodItem,
+  deleteFoodItem,
+  getBookings,
+  getFoodItems,
+  toggleFoodAvailability,
+  updateBookingStatus,
+  updateFoodItem,
+} from "../../services/staffService";
 import "./StaffDashboard.css";
 
 const NAV_ITEMS = [
-  {
-    key: "overview",
-    label: "Tổng quan",
-    icon: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z",
-  },
-  {
-    key: "bookings",
-    label: "Đơn đặt vé",
-    icon: "M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z",
-  },
-  {
-    key: "food",
-    label: "Đồ ăn & thức uống",
-    icon: "M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-8-15.03-8-15.03 0h15.03zM1.02 17h15v2H1.02v-2z",
-  },
+  { key: "overview", label: "Tổng quan", icon: "▦" },
+  { key: "bookings", label: "Danh sách vé", icon: "🎟" },
+  { key: "food", label: "Đồ ăn & thức uống", icon: "🍿" },
 ];
 
-const STATS = [
-  {
-    label: "Đơn hôm nay",
-    value: "47",
-    change: "+8",
-    color: "#2563eb",
-    icon: "M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z",
-  },
-  {
-    label: "Chờ xử lý",
-    value: "12",
-    change: "-3",
-    color: "#f59e0b",
-    icon: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
-  },
-  {
-    label: "Đã hoàn thành",
-    value: "35",
-    change: "+11",
-    color: "#10b981",
-    icon: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-  },
-  {
-    label: "Order đồ ăn",
-    value: "23",
-    change: "+5",
-    color: "#f97316",
-    icon: "M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05z",
-  },
-];
+const emptyFood = { name: "", description: "", price: "", type: "Food", imageUrl: "", isAvailable: true };
+const statusText = { Pending: "Chờ xác nhận", Confirmed: "Đã xác nhận", Cancelled: "Đã hủy" };
+const formatCurrency = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value || 0);
+const formatDate = (date) => date ? new Date(date).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
 
-const RECENT_BOOKINGS = [
-  {
-    id: "BK001",
-    customer: "Nguyen Van A",
-    movie: "Avengers: Doomsday",
-    seats: "A1, A2",
-    time: "09:00",
-    amount: "180,000₫",
-    status: "confirmed",
-  },
-  {
-    id: "BK002",
-    customer: "Tran Thi B",
-    movie: "Mission: Impossible 8",
-    seats: "C5",
-    time: "11:30",
-    amount: "90,000₫",
-    status: "pending",
-  },
-  {
-    id: "BK003",
-    customer: "Le Van C",
-    movie: "The Batman Returns",
-    seats: "B3, B4, B5",
-    time: "14:00",
-    amount: "270,000₫",
-    status: "confirmed",
-  },
-  {
-    id: "BK004",
-    customer: "Pham Thi D",
-    movie: "Spider-Man: New World",
-    seats: "D7",
-    time: "16:15",
-    amount: "90,000₫",
-    status: "cancelled",
-  },
-  {
-    id: "BK005",
-    customer: "Hoang Van E",
-    movie: "Avengers: Doomsday",
-    seats: "E2, E3",
-    time: "19:00",
-    amount: "180,000₫",
-    status: "confirmed",
-  },
-];
-
-const STATUS_CONFIG = {
-  confirmed: { label: "Đã xác nhận", color: "#10b981" },
-  pending: { label: "Chờ xử lý", color: "#f59e0b" },
-  cancelled: { label: "Đã hủy", color: "#ef4444" },
-};
-
-const StaffDashboard = () => {
+export default function StaffDashboard({ initialTab = "overview" }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [activeNav, setActiveNav] = useState("overview");
+  const [activeNav, setActiveNav] = useState(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [bookings, setBookings] = useState([]);
+  const [foods, setFoods] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+  const [bookingFilter, setBookingFilter] = useState("All");
+  const [foodFilter, setFoodFilter] = useState("All");
+  const [foodForm, setFoodForm] = useState(emptyFood);
+  const [editingFood, setEditingFood] = useState(null);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+  const roleName = user?.role && typeof user.role === "object" ? user.role.name : user?.role;
+  const notify = (text) => { setMessage(text); window.setTimeout(() => setMessage(""), 3500); };
+  const loadBookings = async () => {
+    setLoading(true);
+    try { setBookings((await getBookings()).data.data || []); }
+    catch (error) { notify(error.response?.data?.message || "Không thể tải danh sách vé."); }
+    finally { setLoading(false); }
+  };
+  const loadFoods = async () => {
+    setLoading(true);
+    try { setFoods((await getFoodItems()).data.data || []); }
+    catch (error) { notify(error.response?.data?.message || "Không thể tải menu."); }
+    finally { setLoading(false); }
   };
 
-  const roleName =
-    user?.role && typeof user.role === "object" ? user.role.name : user?.role;
+  const changeNav = (nextNav) => {
+    setActiveNav(nextNav);
+    const paths = {
+      overview: "/staff/dashboard",
+      bookings: "/staff/tickets",
+      food: "/staff/food",
+    };
+    navigate(paths[nextNav]);
+  };
 
-  return (
-    <div className="staff-root">
-      {/* SIDEBAR */}
-      <aside className={`staff-sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
-        <div className="staff-sidebar-header">
-          <div className="staff-logo" onClick={() => navigate("/")}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2-2 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z" />
-            </svg>
-            {sidebarOpen && <span>CinemaHub</span>}
-          </div>
-          <button
-            className="staff-sidebar-toggle"
-            onClick={() => setSidebarOpen((v) => !v)}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-        </div>
+  // Tải dữ liệu khi mở trực tiếp trang vé hoặc F&B.
+  useEffect(() => {
+    if (initialTab === "bookings") loadBookings();
+    if (initialTab === "food") loadFoods();
+  }, []);
 
-        <nav className="staff-nav">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              className={`staff-nav-item ${activeNav === item.key ? "active" : ""}`}
-              onClick={() => setActiveNav(item.key)}
-              title={item.label}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d={item.icon} />
-              </svg>
-              {sidebarOpen && <span>{item.label}</span>}
-            </button>
-          ))}
-        </nav>
+  const filteredBookings = useMemo(() => bookings.filter((booking) => {
+    const query = search.toLowerCase();
+    const matchesSearch = !query || booking._id?.toLowerCase().includes(query) || booking.user?.name?.toLowerCase().includes(query) || booking.showtime?.movie?.title?.toLowerCase().includes(query);
+    return matchesSearch && (bookingFilter === "All" || booking.status === bookingFilter);
+  }), [bookings, search, bookingFilter]);
+  const filteredFoods = useMemo(() => foods.filter((food) => foodFilter === "All" || food.type === foodFilter), [foods, foodFilter]);
 
-        <div className="staff-sidebar-user">
-          <div className="staff-sidebar-avatar">
-            {user?.name?.charAt(0)?.toUpperCase() || "S"}
-          </div>
-          {sidebarOpen && (
-            <div className="staff-sidebar-user-info">
-              <div className="staff-sidebar-user-name">
-                {user?.name || "Staff"}
-              </div>
-              <div className="staff-sidebar-user-role">{roleName}</div>
-            </div>
-          )}
-          <button
-            className="staff-logout-btn"
-            onClick={handleLogout}
-            title="Đăng xuất"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-          </button>
-        </div>
-      </aside>
+  const confirmBooking = async (id) => {
+    try {
+      await updateBookingStatus(id, "Confirmed");
+      setBookings((current) => current.map((item) => item._id === id ? { ...item, status: "Confirmed", payment: { ...item.payment, status: "Completed" } } : item));
+      notify("Đã xác nhận vé thành công.");
+    } catch (error) { notify(error.response?.data?.message || "Không thể xác nhận vé."); }
+  };
+  const submitFood = async (event) => {
+    event.preventDefault();
+    const data = { ...foodForm, price: Number(foodForm.price) };
+    try {
+      if (editingFood) {
+        const response = await updateFoodItem(editingFood, data);
+        setFoods((current) => current.map((food) => food._id === editingFood ? response.data.data : food));
+        notify("Đã cập nhật món.");
+      } else {
+        const response = await createFoodItem(data);
+        setFoods((current) => [...current, response.data.data].sort((a, b) => a.name.localeCompare(b.name)));
+        notify("Đã thêm món mới.");
+      }
+      setFoodForm(emptyFood); setEditingFood(null);
+    } catch (error) { notify(error.response?.data?.message || "Không thể lưu món."); }
+  };
+  const editFood = (food) => { setEditingFood(food._id); setFoodForm({ name: food.name, description: food.description || "", price: food.price, type: food.type, imageUrl: food.imageUrl || "", isAvailable: food.isAvailable }); };
+  const changeAvailability = async (food) => {
+    try { const response = await toggleFoodAvailability(food._id); setFoods((current) => current.map((item) => item._id === food._id ? response.data.data : item)); }
+    catch (error) { notify(error.response?.data?.message || "Không thể cập nhật trạng thái món."); }
+  };
+  const removeFood = async (food) => {
+    if (!window.confirm(`Xóa món “${food.name}”?`)) return;
+    try { await deleteFoodItem(food._id); setFoods((current) => current.filter((item) => item._id !== food._id)); notify("Đã xóa món."); }
+    catch (error) { notify(error.response?.data?.message || "Không thể xóa món."); }
+  };
+  const handleLogout = async () => { await logout(); navigate("/login"); };
 
-      {/* MAIN */}
-      <main className="staff-main">
-        <header className="staff-topbar">
-          <div>
-            <h1 className="staff-page-title">
-              {activeNav === "overview" && "Tổng quan ca làm việc"}
-              {activeNav === "bookings" && "Quản lý đơn đặt vé"}
-              {activeNav === "food" && "Quản lý đồ ăn & thức uống"}
-            </h1>
-            <p className="staff-page-subtitle">
-              Xin chào, <strong>{user?.name}</strong>. Vai trò:{" "}
-              <span className="staff-role-badge">{roleName}</span>
-            </p>
-          </div>
-          <button className="staff-topbar-btn" onClick={() => navigate("/")}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              <polyline points="9 22 9 12 15 12 15 22" />
-            </svg>
-            Trang chủ
-          </button>
-        </header>
+  const pendingCount = bookings.filter((item) => item.status === "Pending").length;
+  return <div className="staff-root">
+    <aside className={`staff-sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
+      <div className="staff-sidebar-header"><div className="staff-logo" onClick={() => navigate("/")}>🎬 {sidebarOpen && <span>CinemaHub</span>}</div><button className="staff-sidebar-toggle" onClick={() => setSidebarOpen((value) => !value)}>☰</button></div>
+      <nav className="staff-nav">{NAV_ITEMS.map((item) => <button key={item.key} className={`staff-nav-item ${activeNav === item.key ? "active" : ""}`} onClick={() => changeNav(item.key)} title={item.label}><span className="staff-nav-icon">{item.icon}</span>{sidebarOpen && <span>{item.label}</span>}</button>)}</nav>
+      <div className="staff-sidebar-user"><div className="staff-sidebar-avatar">{user?.name?.charAt(0)?.toUpperCase() || "S"}</div>{sidebarOpen && <div className="staff-sidebar-user-info"><div className="staff-sidebar-user-name">{user?.name || "Staff"}</div><div className="staff-sidebar-user-role">{roleName}</div></div>}<button className="staff-logout-btn" onClick={handleLogout} title="Đăng xuất">↪</button></div>
+    </aside>
+    <main className="staff-main">
+      <header className="staff-topbar"><div><h1 className="staff-page-title">{activeNav === "overview" ? "Tổng quan ca làm việc" : activeNav === "bookings" ? "Danh sách vé đã đặt" : "Đồ ăn & thức uống"}</h1><p className="staff-page-subtitle">Xin chào, <strong>{user?.name}</strong>. Vai trò: <span className="staff-role-badge">{roleName}</span></p></div><button className="staff-topbar-btn" onClick={() => navigate("/")}>⌂ Trang chủ</button></header>
+      {message && <div className="staff-toast">{message}</div>}
+      {activeNav === "overview" && <div className="staff-content"><div className="staff-stats-grid"><Stat value={bookings.length} label="Tổng đơn vé" color="#2563eb"/><Stat value={pendingCount} label="Chờ xác nhận" color="#f59e0b"/><Stat value={bookings.filter((item) => item.status === "Confirmed").length} label="Đã xác nhận" color="#10b981"/><Stat value={foods.filter((item) => item.isAvailable).length} label="Món đang bán" color="#f97316"/></div><div className="staff-placeholder-panel"><div className="staff-placeholder-title">Sẵn sàng phục vụ</div><div className="staff-placeholder-desc">Mở “Danh sách vé” để xác nhận vé hoặc “Đồ ăn & thức uống” để quản lý menu.</div></div></div>}
+      {activeNav === "bookings" && <div className="staff-content"><div className="staff-toolbar"><input className="staff-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm mã vé, khách hàng, phim..."/><select value={bookingFilter} onChange={(event) => setBookingFilter(event.target.value)}><option value="All">Tất cả trạng thái</option><option value="Pending">Chờ xác nhận</option><option value="Confirmed">Đã xác nhận</option><option value="Cancelled">Đã hủy</option></select><button className="staff-topbar-btn" onClick={loadBookings}>↻ Làm mới</button></div><div className="staff-table-wrap"><table className="staff-table booking-table"><thead><tr><th>Mã vé</th><th>Khách hàng</th><th>Phim / suất chiếu</th><th>Ghế</th><th>Tổng tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>{filteredBookings.map((booking) => <tr key={booking._id}><td><span className="staff-booking-id">{booking._id.slice(-8).toUpperCase()}</span><small>{formatDate(booking.createdAt)}</small></td><td><strong>{booking.user?.name || "—"}</strong><small>{booking.user?.phone || booking.user?.email || ""}</small></td><td>{booking.showtime?.movie?.title || "Suất chiếu đã xóa"}<small>{booking.showtime ? `${booking.showtime.startTime} · ${booking.showtime.room?.name || ""}` : ""}</small></td><td className="staff-seats">{booking.tickets?.map((ticket) => ticket.seatNumber).join(", ") || "—"}</td><td className="staff-money">{formatCurrency(booking.totalAmount)}</td><td><span className={`staff-table-status ${booking.status.toLowerCase()}`}>{statusText[booking.status]}</span></td><td>{booking.status === "Pending" && <button className="staff-action-btn confirm" onClick={() => confirmBooking(booking._id)}>Xác nhận</button>}</td></tr>)}{!loading && !filteredBookings.length && <tr><td colSpan="7" className="staff-empty">Không tìm thấy đơn vé phù hợp.</td></tr>}</tbody></table>{loading && <div className="staff-loading">Đang tải dữ liệu…</div>}</div></div>}
+      {activeNav === "food" && <div className="staff-content"><div className="staff-food-layout"><section className="staff-menu-section"><div className="staff-toolbar"><div className="staff-section-title">Menu hiện có</div><select value={foodFilter} onChange={(event) => setFoodFilter(event.target.value)}><option value="All">Tất cả</option><option value="Food">Đồ ăn</option><option value="Drink">Thức uống</option><option value="Combo">Combo</option></select></div><div className="staff-food-grid">{filteredFoods.map((food) => <article className={`staff-food-card ${food.isAvailable ? "" : "unavailable"}`} key={food._id}><div className="staff-food-image">{food.imageUrl ? <img src={food.imageUrl} alt={food.name} onError={(event) => { event.currentTarget.style.display = "none"; }} /> : "🍿"}</div><div className="staff-food-body"><div className="staff-food-heading"><h3>{food.name}</h3><span>{food.type === "Food" ? "Đồ ăn" : food.type === "Drink" ? "Thức uống" : "Combo"}</span></div><p>{food.description || "Chưa có mô tả."}</p><strong>{formatCurrency(food.price)}</strong><div className="staff-food-actions"><button onClick={() => changeAvailability(food)} className={food.isAvailable ? "staff-action-btn pause" : "staff-action-btn confirm"}>{food.isAvailable ? "Ngừng bán" : "Mở bán"}</button><button className="staff-action-btn" onClick={() => editFood(food)}>Sửa</button><button className="staff-action-btn danger" onClick={() => removeFood(food)}>Xóa</button></div></div></article>)}{!loading && !filteredFoods.length && <div className="staff-empty">Chưa có món nào.</div>}</div></section><aside className="staff-food-form-card"><h2>{editingFood ? "Cập nhật món" : "Thêm món mới"}</h2><form onSubmit={submitFood}><label>Tên món<input required value={foodForm.name} onChange={(event) => setFoodForm({ ...foodForm, name: event.target.value })}/></label><label>Loại<select value={foodForm.type} onChange={(event) => setFoodForm({ ...foodForm, type: event.target.value })}><option value="Food">Đồ ăn</option><option value="Drink">Thức uống</option><option value="Combo">Combo</option></select></label><label>Giá bán<input type="number" min="0" required value={foodForm.price} onChange={(event) => setFoodForm({ ...foodForm, price: event.target.value })}/></label><label>Ảnh (URL)<input value={foodForm.imageUrl} onChange={(event) => setFoodForm({ ...foodForm, imageUrl: event.target.value })}/></label><label>Mô tả<textarea rows="3" value={foodForm.description} onChange={(event) => setFoodForm({ ...foodForm, description: event.target.value })}/></label><div className="staff-form-actions"><button className="staff-action-btn confirm" type="submit">{editingFood ? "Lưu thay đổi" : "Thêm món"}</button>{editingFood && <button type="button" className="staff-action-btn" onClick={() => { setEditingFood(null); setFoodForm(emptyFood); }}>Hủy</button>}</div></form></aside></div></div>}
+    </main>
+  </div>;
+}
 
-        {/* OVERVIEW */}
-        {activeNav === "overview" && (
-          <div className="staff-content">
-            <div className="staff-stats-grid">
-              {STATS.map((s, i) => (
-                <div className="staff-stat-card" key={i}>
-                  <div
-                    className="staff-stat-icon"
-                    style={{ background: `${s.color}22`, color: s.color }}
-                  >
-                    <svg
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d={s.icon} />
-                    </svg>
-                  </div>
-                  <div className="staff-stat-info">
-                    <div className="staff-stat-value">{s.value}</div>
-                    <div className="staff-stat-label">{s.label}</div>
-                  </div>
-                  <div
-                    className={`staff-stat-change ${s.change.startsWith("-") ? "negative" : "positive"}`}
-                  >
-                    {s.change}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="staff-section-title">Đơn đặt vé gần nhất</div>
-            <div className="staff-table-wrap">
-              <table className="staff-table">
-                <thead>
-                  <tr>
-                    <th>Mã đơn</th>
-                    <th>Khách hàng</th>
-                    <th>Phim</th>
-                    <th>Ghế</th>
-                    <th>Giờ chiếu</th>
-                    <th>Tiền</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {RECENT_BOOKINGS.map((b, i) => (
-                    <tr key={i}>
-                      <td>
-                        <span className="staff-booking-id">{b.id}</span>
-                      </td>
-                      <td style={{ color: "#c0c0e8", fontWeight: 500 }}>
-                        {b.customer}
-                      </td>
-                      <td style={{ color: "#8888aa" }}>{b.movie}</td>
-                      <td style={{ color: "#8888aa", fontFamily: "monospace" }}>
-                        {b.seats}
-                      </td>
-                      <td>
-                        <span className="staff-time-tag">{b.time}</span>
-                      </td>
-                      <td style={{ color: "#10b981", fontWeight: 600 }}>
-                        {b.amount}
-                      </td>
-                      <td>
-                        <span
-                          className="staff-table-status"
-                          style={{
-                            background: `${STATUS_CONFIG[b.status].color}15`,
-                            color: STATUS_CONFIG[b.status].color,
-                            border: `1px solid ${STATUS_CONFIG[b.status].color}33`,
-                          }}
-                        >
-                          {STATUS_CONFIG[b.status].label}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* BOOKINGS */}
-        {activeNav === "bookings" && (
-          <div className="staff-content">
-            <div className="staff-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#2563eb", marginBottom: 16 }}
-              >
-                <path d="M20 12c0-1.1.9-2 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2zm-9 4H5v-2c1.1 0 2-.9 2-2s-.9-2-2-2V8h6v8zm8 0h-6V8h6v8z" />
-              </svg>
-              <div className="staff-placeholder-title">Quản lý đơn đặt vé</div>
-              <div className="staff-placeholder-desc">
-                Xem, xác nhận và xử lý các đơn đặt vé của khách hàng.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* FOOD */}
-        {activeNav === "food" && (
-          <div className="staff-content">
-            <div className="staff-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#f97316", marginBottom: 16 }}
-              >
-                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                <line x1="6" y1="1" x2="6" y2="4" />
-                <line x1="10" y1="1" x2="10" y2="4" />
-                <line x1="14" y1="1" x2="14" y2="4" />
-              </svg>
-              <div className="staff-placeholder-title">
-                Quản lý đồ ăn & thức uống
-              </div>
-              <div className="staff-placeholder-desc">
-                Quản lý menu, order đồ ăn và xử lý yêu cầu của khách hàng.
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default StaffDashboard;
+function Stat({ value, label, color }) { return <div className="staff-stat-card"><div className="staff-stat-icon" style={{ color, background: `${color}22` }}>●</div><div><div className="staff-stat-value">{value}</div><div className="staff-stat-label">{label}</div></div></div>; }

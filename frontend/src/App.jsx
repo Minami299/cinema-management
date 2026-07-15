@@ -28,7 +28,8 @@ import ManagerDashboard from "./pages/manager/ManagerDashboard";
 
 // ================= STAFF =================
 import StaffDashboard from "./pages/staff/StaffDashboard";
-
+import StaffTicketsPage from "./pages/staff/StaffTicketsPage";
+import StaffFoodPage from "./pages/staff/StaffFoodPage";
 import "./App.css";
 
 function App() {
@@ -107,6 +108,22 @@ function App() {
             element={
               <RoleRoute allowedRoles={["STAFF", "MANAGER", "ADMIN"]}>
                 <StaffDashboard />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/staff/tickets"
+            element={
+              <RoleRoute allowedRoles={["STAFF", "MANAGER", "ADMIN"]}>
+                <StaffTicketsPage />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/staff/food"
+            element={
+              <RoleRoute allowedRoles={["STAFF", "MANAGER", "ADMIN"]}>
+                <StaffFoodPage />
               </RoleRoute>
             }
           />
