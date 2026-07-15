@@ -14,6 +14,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import MovieDetailPage from "./pages/MovieDetailPage";
+import FoodOrderPage from "./pages/FoodOrderPage";
 
 // ================= ADMIN =================
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -40,6 +41,7 @@ function App() {
           {/* ================= PUBLIC ================= */}
           <Route path="/" element={<HomePage />} />
           <Route path="/movie/:id" element={<MovieDetailPage />} />
+          <Route path="/food-drink" element={<PrivateRoute><FoodOrderPage /></PrivateRoute>} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* ================= AUTH ================= */}

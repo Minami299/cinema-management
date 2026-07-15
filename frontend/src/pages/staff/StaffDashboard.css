@@ -356,6 +356,7 @@
 .staff-food-form-card label { display: flex; flex-direction: column; gap: 6px; color: #9a9abc; font-size: 12px; }
 .staff-food-form-card input, .staff-food-form-card select, .staff-food-form-card textarea { width: 100%; box-sizing: border-box; }
 .staff-food-form-card textarea { resize: vertical; }
+.staff-food-orders { margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.07); }
 
 @media (max-width: 900px) { .staff-food-layout { grid-template-columns: 1fr; } .staff-food-form-card { position: static; } }
 @media (max-width: 650px) { .staff-sidebar { width: 68px; } .staff-sidebar .staff-logo span, .staff-sidebar .staff-nav-item span:not(.staff-nav-icon), .staff-sidebar .staff-sidebar-user-info { display: none; } .staff-topbar, .staff-content { padding-left: 18px; padding-right: 18px; } .staff-page-title { font-size: 20px; } .staff-search { min-width: 100%; } .staff-topbar-btn { padding: 9px; } }

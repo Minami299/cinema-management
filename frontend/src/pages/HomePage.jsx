@@ -309,6 +309,11 @@ const HomePage = () => {
             <a href="#promotions" className="nav-item-link">
               Promotions
             </a>
+            {user && !canManageFood && (
+              <button type="button" className="nav-item-link" onClick={() => navigate("/food-drink")}>
+                Food & Drink
+              </button>
+            )}
             {canManageFood && (
               <>
                 <button
