@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import ManagerMovieTable from "../../components/manager/ManagerMovieTable";
+import ManagerMovieFormModal from "../../components/manager/ManagerMovieFormModal";
+import ManagerShowtimeTable from "../../components/manager/ManagerShowtimeTable";
+import ManagerShowtimeFormModal from "../../components/manager/ManagerShowtimeFormModal";
+import ManagerCinemaRoomTable from "../../components/manager/ManagerCinemaRoomTable";
+import ManagerCinemaRoomFormModal from "../../components/manager/ManagerCinemaRoomFormModal";
+import movieService from "../../services/movieService";
 import "./ManagerDashboard.css";
 
 const NAV_ITEMS = [
@@ -25,6 +32,12 @@ const NAV_ITEMS = [
     icon: "M12 3L2 12h3v9h6v-5h2v5h6v-9h3L12 3zm0 12.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
   },
 ];
+
+const normalizeList = (responseData) => {
+  if (Array.isArray(responseData)) return responseData;
+  if (Array.isArray(responseData?.data)) return responseData.data;
+  return [];
+};
 
 const STATS = [
   {
@@ -85,115 +98,33 @@ const UPCOMING_SHOWTIMES = [
   },
 ];
 
-const MOVIES_MANAGEMENT = [
-  {
-    title: "Avengers: Doomsday",
-    genre: "Action, Sci-Fi",
-    duration: 140,
-    releaseDate: "2026-05-08",
-    status: "Now Showing",
-  },
-  {
-    title: "Mission: Impossible 8",
-    genre: "Action, Thriller",
-    duration: 130,
-    releaseDate: "2026-06-12",
-    status: "Now Showing",
-  },
-  {
-    title: "The Batman Returns",
-    genre: "Action, Drama",
-    duration: 150,
-    releaseDate: "2026-04-28",
-    status: "Now Showing",
-  },
-  {
-    title: "Spider-Man: New World",
-    genre: "Adventure, Fantasy",
-    duration: 135,
-    releaseDate: "2026-07-01",
-    status: "Now Showing",
-  },
-];
-
-const SHOWTIME_MANAGEMENT = [
-  {
-    movie: "Avengers: Doomsday",
-    cinema: "CinemaHub Q1",
-    room: "Phòng 1",
-    date: "2026-07-15",
-    time: "09:00",
-    price: "140.000",
-    seats: "120/150",
-    status: "Mở bán",
-  },
-  {
-    movie: "Mission: Impossible 8",
-    cinema: "CinemaHub Q7",
-    room: "Phòng 3",
-    date: "2026-07-15",
-    time: "11:30",
-    price: "150.000",
-    seats: "98/120",
-    status: "Mở bán",
-  },
-  {
-    movie: "The Batman Returns",
-    cinema: "CinemaHub Thủ Đức",
-    room: "Phòng IMAX",
-    date: "2026-07-15",
-    time: "14:00",
-    price: "220.000",
-    seats: "200/200",
-    status: "Hết chỗ",
-  },
-  {
-    movie: "Spider-Man: New World",
-    cinema: "CinemaHub Q1",
-    room: "Phòng 2",
-    date: "2026-07-15",
-    time: "16:15",
-    price: "130.000",
-    seats: "45/150",
-    status: "Mở bán",
-  },
-];
-
-const CINEMA_ROOMS = [
-  {
-    cinema: "CinemaHub Q1",
-    city: "Hà Nội",
-    status: "Active",
-    rooms: [
-      { name: "Phòng 1", type: "2D", capacity: 150 },
-      { name: "Phòng 2", type: "3D", capacity: 150 },
-    ],
-  },
-  {
-    cinema: "CinemaHub Q7",
-    city: "Hồ Chí Minh",
-    status: "Active",
-    rooms: [
-      { name: "Phòng 3", type: "IMAX", capacity: 120 },
-      { name: "Phòng 4", type: "4DX", capacity: 100 },
-    ],
-  },
-  {
-    cinema: "CinemaHub Thủ Đức",
-    city: "Hồ Chí Minh",
-    status: "Maintenance",
-    rooms: [
-      { name: "Phòng IMAX", type: "IMAX", capacity: 200 },
-      { name: "Phòng 5", type: "2D", capacity: 130 },
-    ],
-  },
-];
-
 const ManagerDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeNav, setActiveNav] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // State for data
+  const [movies, setMovies] = useState([]);
+  const [showtimes, setShowtimes] = useState([]);
+  const [cinemas, setCinemas] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // State for pagination
+  const [currentMoviePage, setCurrentMoviePage] = useState(1);
+  const [currentShowtimePage, setCurrentShowtimePage] = useState(1);
+  const moviesPerPage = 5;
+  const showtimesPerPage = 5;
+
+  // State for modals
+  const [isMovieFormOpen, setIsMovieFormOpen] = useState(false);
+  const [isShowtimeFormOpen, setIsShowtimeFormOpen] = useState(false);
+  const [isCinemaRoomFormOpen, setIsCinemaRoomFormOpen] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [selectedShowtime, setSelectedShowtime] = useState(null);
+  const [selectedCinemaRoom, setSelectedCinemaRoom] = useState(null);
+  const [cinemaRoomType, setCinemaRoomType] = useState("cinema");
 
   const handleLogout = async () => {
     await logout();
@@ -202,6 +133,164 @@ const ManagerDashboard = () => {
 
   const roleName =
     user?.role && typeof user.role === "object" ? user.role.name : user?.role;
+
+  // Load data
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [movieRes, showtimeRes, cinemaRes, roomRes] = await Promise.all([
+        movieService.movies.getAll(),
+        movieService.showtimes.getAll(),
+        movieService.cinemas.getAll(),
+        movieService.rooms.getAll(),
+      ]);
+
+      setMovies(normalizeList(movieRes.data));
+      setShowtimes(normalizeList(showtimeRes.data));
+      setCinemas(normalizeList(cinemaRes.data));
+      setRooms(normalizeList(roomRes.data));
+      setCurrentMoviePage(1);
+      setCurrentShowtimePage(1);
+    } catch (error) {
+      console.error("Error loading data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate pagination
+  const totalMoviePages = Math.ceil(movies.length / moviesPerPage);
+  const startMovieIndex = (currentMoviePage - 1) * moviesPerPage;
+  const paginatedMovies = movies.slice(startMovieIndex, startMovieIndex + moviesPerPage);
+
+  const totalShowtimePages = Math.ceil(showtimes.length / showtimesPerPage);
+  const startShowtimeIndex = (currentShowtimePage - 1) * showtimesPerPage;
+  const paginatedShowtimes = showtimes.slice(startShowtimeIndex, startShowtimeIndex + showtimesPerPage);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Movie handlers
+  const handleMovieEdit = (movie) => {
+    setSelectedMovie(movie);
+    setIsMovieFormOpen(true);
+  };
+
+  const handleMovieDelete = async (movie) => {
+    if (window.confirm(`Delete movie "${movie.title}"?`)) {
+      try {
+        await movieService.movies.delete(movie._id);
+        await loadData();
+      } catch (error) {
+        console.error("Error deleting movie:", error);
+      }
+    }
+  };
+
+  const handleMovieFormClose = () => {
+    setIsMovieFormOpen(false);
+    setSelectedMovie(null);
+  };
+
+  const handleMovieSubmit = async (payload) => {
+    try {
+      if (selectedMovie?._id) {
+        await movieService.movies.update(selectedMovie._id, payload);
+      } else {
+        await movieService.movies.create(payload);
+      }
+      handleMovieFormClose();
+      await loadData();
+    } catch (error) {
+      console.error("Error submitting movie:", error);
+    }
+  };
+
+  // Showtime handlers
+  const handleShowtimeEdit = (showtime) => {
+    setSelectedShowtime(showtime);
+    setIsShowtimeFormOpen(true);
+  };
+
+  const handleShowtimeDelete = async (showtime) => {
+    if (window.confirm("Delete showtime?")) {
+      try {
+        await movieService.showtimes.delete(showtime._id);
+        await loadData();
+      } catch (error) {
+        console.error("Error deleting showtime:", error);
+      }
+    }
+  };
+
+  const handleShowtimeFormClose = () => {
+    setIsShowtimeFormOpen(false);
+    setSelectedShowtime(null);
+  };
+
+  const handleShowtimeSubmit = async (payload) => {
+    try {
+      if (selectedShowtime?._id) {
+        await movieService.showtimes.update(selectedShowtime._id, payload);
+      } else {
+        await movieService.showtimes.create(payload);
+      }
+      handleShowtimeFormClose();
+      await loadData();
+    } catch (error) {
+      console.error("Error submitting showtime:", error);
+    }
+  };
+
+  // Cinema/Room handlers
+  const handleCinemaRoomEdit = (item, type) => {
+    setSelectedCinemaRoom(item);
+    setCinemaRoomType(type);
+    setIsCinemaRoomFormOpen(true);
+  };
+
+  const handleCinemaRoomDelete = async (item, type) => {
+    if (window.confirm(`Delete ${type}?`)) {
+      try {
+        if (type === "cinema") {
+          await movieService.cinemas.delete(item._id);
+        } else {
+          await movieService.rooms.delete(item._id);
+        }
+        await loadData();
+      } catch (error) {
+        console.error("Error deleting:", error);
+      }
+    }
+  };
+
+  const handleCinemaRoomFormClose = () => {
+    setIsCinemaRoomFormOpen(false);
+    setSelectedCinemaRoom(null);
+  };
+
+  const handleCinemaRoomSubmit = async (payload) => {
+    try {
+      if (cinemaRoomType === "cinema") {
+        if (selectedCinemaRoom?._id) {
+          await movieService.cinemas.update(selectedCinemaRoom._id, payload);
+        } else {
+          await movieService.cinemas.create(payload);
+        }
+      } else {
+        if (selectedCinemaRoom?._id) {
+          await movieService.rooms.update(selectedCinemaRoom._id, payload);
+        } else {
+          await movieService.rooms.create(payload);
+        }
+      }
+      handleCinemaRoomFormClose();
+      await loadData();
+    } catch (error) {
+      console.error("Error submitting:", error);
+    }
+  }
 
   return (
     <div className="manager-root">
@@ -395,113 +484,186 @@ const ManagerDashboard = () => {
         {/* MOVIES */}
         {activeNav === "movies" && (
           <div className="manager-content">
-            <div className="manager-section-title">Danh sách phim</div>
-            <div className="manager-table-wrap">
-              <table className="manager-table">
-                <thead>
-                  <tr>
-                    <th>Tiêu đề</th>
-                    <th>Thể loại</th>
-                    <th>Thời lượng</th>
-                    <th>Ngày ra mắt</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {MOVIES_MANAGEMENT.map((movie) => (
-                    <tr key={movie.title}>
-                      <td>{movie.title}</td>
-                      <td>{movie.genre}</td>
-                      <td>{movie.duration} phút</td>
-                      <td>{new Date(movie.releaseDate).toLocaleDateString("vi-VN")}</td>
-                      <td>
-                        <span className="manager-pill">{movie.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div className="manager-section-title">Danh sách phim</div>
+              <button
+                onClick={() => {
+                  setSelectedMovie(null);
+                  setIsMovieFormOpen(true);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                }}
+              >
+                Add Movie
+              </button>
             </div>
+
+            {loading ? (
+              <div style={{ color: "#8888aa", textAlign: "center", padding: "40px" }}>
+                Loading...
+              </div>
+            ) : (
+              <ManagerMovieTable
+                movies={paginatedMovies}
+                onEdit={handleMovieEdit}
+                onDelete={handleMovieDelete}
+                currentPage={currentMoviePage}
+                totalPages={totalMoviePages}
+                onPageChange={setCurrentMoviePage}
+              />
+            )}
+
+            <ManagerMovieFormModal
+              isOpen={isMovieFormOpen}
+              movie={selectedMovie}
+              onClose={handleMovieFormClose}
+              onSubmit={handleMovieSubmit}
+            />
           </div>
         )}
 
         {/* SHOWTIMES */}
         {activeNav === "showtimes" && (
           <div className="manager-content">
-            <div className="manager-section-title">Danh sách suất chiếu</div>
-            <div className="manager-table-wrap">
-              <table className="manager-table">
-                <thead>
-                  <tr>
-                    <th>Phim</th>
-                    <th>Rạp</th>
-                    <th>Phòng</th>
-                    <th>Ngày</th>
-                    <th>Giờ</th>
-                    <th>Giá vé</th>
-                    <th>Ghế</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SHOWTIME_MANAGEMENT.map((item) => (
-                    <tr key={`${item.movie}-${item.time}`}>
-                      <td>{item.movie}</td>
-                      <td>{item.cinema}</td>
-                      <td>{item.room}</td>
-                      <td>{new Date(item.date).toLocaleDateString("vi-VN")}</td>
-                      <td>{item.time}</td>
-                      <td>{item.price} đ</td>
-                      <td>{item.seats}</td>
-                      <td>
-                        <span className={`manager-table-status ${item.status === "Hết chỗ" ? "full" : "open"}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div className="manager-section-title">Danh sách suất chiếu</div>
+              <button
+                onClick={() => {
+                  setSelectedShowtime(null);
+                  setIsShowtimeFormOpen(true);
+                }}
+                style={{
+                  padding: "8px 16px",
+                  backgroundColor: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                }}
+              >
+                Add Showtime
+              </button>
             </div>
+
+            {loading ? (
+              <div style={{ color: "#8888aa", textAlign: "center", padding: "40px" }}>
+                Loading...
+              </div>
+            ) : (
+              <ManagerShowtimeTable
+                showtimes={paginatedShowtimes}
+                movies={movies}
+                rooms={rooms}
+                onEdit={handleShowtimeEdit}
+                onDelete={handleShowtimeDelete}
+                currentPage={currentShowtimePage}
+                totalPages={totalShowtimePages}
+                onPageChange={setCurrentShowtimePage}
+              />
+            )}
+
+            <ManagerShowtimeFormModal
+              isOpen={isShowtimeFormOpen}
+              showtime={selectedShowtime}
+              movies={movies}
+              rooms={rooms}
+              onClose={handleShowtimeFormClose}
+              onSubmit={handleShowtimeSubmit}
+            />
           </div>
         )}
 
-        {/* CINEMAS */}
+        {/* CINEMAS & ROOMS */}
         {activeNav === "cinemas" && (
           <div className="manager-content">
-            <div className="manager-section-title">Danh sách rạp & phòng</div>
-            <div className="manager-table-wrap">
-              <table className="manager-table">
-                <thead>
-                  <tr>
-                    <th>Rạp</th>
-                    <th>Thành phố</th>
-                    <th>Trạng thái</th>
-                    <th>Phòng</th>
-                    <th>Loại phòng</th>
-                    <th>Sức chứa</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {CINEMA_ROOMS.flatMap((cinema) =>
-                    cinema.rooms.map((room) => (
-                      <tr key={`${cinema.cinema}-${room.name}`}>
-                        <td>{cinema.cinema}</td>
-                        <td>{cinema.city}</td>
-                        <td>
-                          <span className={`manager-table-status ${cinema.status === "Active" ? "open" : "full"}`}>
-                            {cinema.status}
-                          </span>
-                        </td>
-                        <td>{room.name}</td>
-                        <td>{room.type}</td>
-                        <td>{room.capacity}</td>
-                      </tr>
-                    )),
-                  )}
-                </tbody>
-              </table>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div className="manager-section-title">Rạp & Phòng Chiếu</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => {
+                    setSelectedCinemaRoom(null);
+                    setCinemaRoomType("cinema");
+                    setIsCinemaRoomFormOpen(true);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#10b981",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add Cinema
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCinemaRoom(null);
+                    setCinemaRoomType("room");
+                    setIsCinemaRoomFormOpen(true);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#3b82f6",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add Room
+                </button>
+              </div>
             </div>
+
+            <div style={{ marginBottom: 30 }}>
+              <h3 style={{ color: "#e0e0f8", marginBottom: 12 }}>Rạp Phim</h3>
+              {loading ? (
+                <div style={{ color: "#8888aa", textAlign: "center", padding: "40px" }}>
+                  Loading...
+                </div>
+              ) : (
+                <ManagerCinemaRoomTable
+                  data={cinemas}
+                  type="cinema"
+                  cinemas={cinemas}
+                  onEdit={handleCinemaRoomEdit}
+                  onDelete={handleCinemaRoomDelete}
+                />
+              )}
+            </div>
+
+            <div>
+              <h3 style={{ color: "#e0e0f8", marginBottom: 12 }}>Phòng Chiếu</h3>
+              {loading ? (
+                <div style={{ color: "#8888aa", textAlign: "center", padding: "40px" }}>
+                  Loading...
+                </div>
+              ) : (
+                <ManagerCinemaRoomTable
+                  data={rooms}
+                  type="room"
+                  cinemas={cinemas}
+                  onEdit={handleCinemaRoomEdit}
+                  onDelete={handleCinemaRoomDelete}
+                />
+              )}
+            </div>
+
+            <ManagerCinemaRoomFormModal
+              isOpen={isCinemaRoomFormOpen}
+              itemType={cinemaRoomType}
+              item={selectedCinemaRoom}
+              cinemas={cinemas}
+              onClose={handleCinemaRoomFormClose}
+              onSubmit={handleCinemaRoomSubmit}
+            />
           </div>
         )}
       </main>
