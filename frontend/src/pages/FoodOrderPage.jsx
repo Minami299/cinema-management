@@ -5,6 +5,7 @@ import axiosClient from "../services/axiosClient";
 import "./FoodOrderPage.css";
 
 const money = (value) => `${Number(value || 0).toLocaleString("vi-VN")} VNĐ`;
+const fallbackFoodImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240' viewBox='0 0 400 240'%3E%3Crect width='400' height='240' fill='%231b1b34'/%3E%3Ctext x='200' y='125' text-anchor='middle' fill='%2393c5fd' font-family='Arial' font-size='24'%3EFood %26 Drink%3C/text%3E%3C/svg%3E";
 
 export default function FoodOrderPage() {
   const { user } = useAuth();
@@ -58,7 +59,7 @@ export default function FoodOrderPage() {
         <div className="food-order-intro"><h2>Chọn món yêu thích</h2><p>Đặt trước và nhận món nhanh tại quầy.</p></div>
         {loading ? <p>Đang tải thực đơn...</p> : foods.length === 0 ? <p>Hiện chưa có món nào phục vụ.</p> : <div className="food-menu-grid">
           {foods.map((food) => <article className="food-menu-card" key={food._id}>
-            <img src={food.imageUrl || "https://via.placeholder.com/400x240?text=Food+%26+Drink"} alt={food.name} onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/400x240?text=Food+%26+Drink"; }} />
+            <img src={food.imageUrl || fallbackFoodImage} alt={food.name} loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackFoodImage; }} />
             <div className="food-menu-body"><span className="food-type">{food.type}</span><h3>{food.name}</h3><p>{food.description || "Thưởng thức cùng bộ phim của bạn."}</p><strong>{money(food.price)}</strong>
               <div className="food-counter"><button onClick={() => changeQuantity(food._id, -1)} disabled={!cart[food._id]}>−</button><span>{cart[food._id] || 0}</span><button onClick={() => changeQuantity(food._id, 1)}>+</button></div>
             </div>
