@@ -4,12 +4,10 @@ const mongoose = require("mongoose");
 
 class BookingService {
   async createBooking(userId, bookingData) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
     try {
       const { showtimeId, tickets, foods, paymentMethod, totalAmount } =
         bookingData;
-      const showtime = await Showtime.findById(showtimeId).session(session);
+      const showtime = await Showtime.findById(showtimeId);
       if (!showtime) throw new Error("Suất chiếu không tồn tại.");
 
       const requestedSeats = tickets.map((t) => t.seatNumber);
@@ -20,8 +18,9 @@ class BookingService {
           seat.status = "Booked";
         }
       }
-      await showtime.save({ session });
+      await showtime.save();
 
+      const isCash = paymentMethod === "CASH";
       const newBooking = new Booking({
         user: userId,
         showtime: showtimeId,
@@ -31,20 +30,18 @@ class BookingService {
         payment: {
           paymentMethod,
           amount: totalAmount,
-          status: paymentMethod === "CASH" ? "Completed" : "Pending",
-          paidAt: paymentMethod === "CASH" ? new Date() : null,
+          // CASH thì chưa thanh toán (Pending), MoMo/VNPAY giả lập là đã thanh toán (Completed)
+          status: isCash ? "Pending" : "Completed",
+          paidAt: isCash ? null : new Date(),
         },
-        status: paymentMethod === "CASH" ? "Confirmed" : "Pending",
+        // CASH thì chờ thanh toán (Pending), MoMo/VNPAY là đã xác nhận (Confirmed)
+        status: isCash ? "Pending" : "Confirmed",
       });
 
-      await newBooking.save({ session });
-      await session.commitTransaction();
+      await newBooking.save();
       return newBooking;
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 

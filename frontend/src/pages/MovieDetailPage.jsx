@@ -35,6 +35,7 @@ const MovieDetailPage = () => {
   const [foodQuantities, setFoodQuantities] = useState({});
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     const fetchBookingData = async () => {
@@ -160,8 +161,8 @@ const MovieDetailPage = () => {
     return ticketAmount + foodAmount;
   }, [ticketAmount, foodAmount]);
 
-  // Hàm xử lý đặt vé
-  const handleConfirmBooking = async () => {
+  // Hàm xử lý mở modal xác nhận đặt vé
+  const handleConfirmBooking = () => {
     if (!user) {
       alert("Vui lòng đăng nhập trước khi đặt vé.");
       navigate("/login");
@@ -178,6 +179,11 @@ const MovieDetailPage = () => {
       return;
     }
 
+    setShowConfirmModal(true);
+  };
+
+  // Hàm thực tế lưu đơn hàng lên cơ sở dữ liệu
+  const executeBooking = async () => {
     setBookingLoading(true);
     try {
       const bookingPayload = {
@@ -203,6 +209,7 @@ const MovieDetailPage = () => {
       const res = await axiosClient.post("/bookings", bookingPayload);
       if (res.data.success) {
         alert("Đặt vé thành công!");
+        setShowConfirmModal(false);
         navigate("/profile");
       } else {
         alert("Đặt vé thất bại: " + res.data.message);
@@ -705,6 +712,73 @@ const MovieDetailPage = () => {
           </div>
         )}
       </div>
+
+      {showConfirmModal && (
+        <div className="booking-modal-overlay">
+          <div className="booking-modal-content">
+            <h3 className="modal-title">Xác Nhận Thanh Toán</h3>
+            
+            <div className="modal-body">
+              <div className="modal-info-section">
+                <p><strong>Phim:</strong> <span>{movie?.title}</span></p>
+                <p><strong>Suất chiếu:</strong> <span>{selectedShowtime?.startTime} ~ {selectedShowtime?.endTime} ngày {new Date(selectedShowtime?.date).toLocaleDateString("vi-VN")}</span></p>
+                <p><strong>Phòng:</strong> <span>{selectedShowtime?.room?.name} ({selectedShowtime?.cinema?.name})</span></p>
+                <p><strong>Ghế đã chọn:</strong> <span>{selectedSeats.join(", ")}</span></p>
+                {Object.entries(foodQuantities).filter(e => e[1] > 0).length > 0 && (
+                  <p><strong>Đồ ăn combo:</strong> <span>{
+                    Object.entries(foodQuantities)
+                      .filter(e => e[1] > 0)
+                      .map(([foodId, qty]) => {
+                        const foodObj = availableFoods.find(f => f._id === foodId);
+                        return `${foodObj?.name} (x${qty})`;
+                      }).join(", ")
+                  }</span></p>
+                )}
+                <p className="modal-total"><strong>Tổng tiền:</strong> <span>{totalAmount.toLocaleString("vi-VN")} VNĐ</span></p>
+                <p><strong>Hình thức:</strong> <span>{
+                  paymentMethod === "CASH" ? "Tiền mặt tại quầy (CASH)" :
+                  paymentMethod === "MOMO" ? "Ví điện tử MoMo" : "Cổng thanh toán VNPAY"
+                }</span></p>
+              </div>
+
+              {paymentMethod !== "CASH" && (
+                <div className="modal-qr-section">
+                  <p className="qr-title">Quét mã QR để thanh toán:</p>
+                  <div className="qr-code-wrapper">
+                    <img 
+                      src={
+                        paymentMethod === "MOMO" 
+                          ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`https://nhantien.momo.vn/0379198883/${totalAmount}`)}`
+                          : `https://img.vietqr.io/image/MB-0379198883-compact2.png?amount=${totalAmount}&addInfo=${encodeURIComponent(`Thanh toan ve ${movie?.title}`)}&accountName=CinemaHub`
+                      } 
+                      alt="Payment QR Code" 
+                      className="payment-qr-img"
+                    />
+                  </div>
+                  <p className="qr-note">* Vui lòng quét mã và hoàn tất chuyển khoản trước khi bấm Xác nhận.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-actions">
+              <button 
+                className="modal-btn btn-cancel" 
+                onClick={() => setShowConfirmModal(false)}
+                disabled={bookingLoading}
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                className="modal-btn btn-confirm" 
+                onClick={executeBooking}
+                disabled={bookingLoading}
+              >
+                {bookingLoading ? "Đang xử lý..." : paymentMethod === "CASH" ? "Xác nhận đặt vé" : "Xác nhận đã thanh toán"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
