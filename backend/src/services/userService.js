@@ -20,8 +20,8 @@ class UserService {
   async getUserById(id) {
     return await User.findById(id)
       .populate("role")
-      // SỬA TẠI ĐÂY: Đổi "imageUrl" thành "poster"
-      .populate("favorites", "title poster duration");
+      // SỬA TẠI ĐÂY: Đổi "imageUrl" thành "posterUrl"
+      .populate("favorites", "title posterUrl duration");
   }
 
   async getUserByEmail(email) {

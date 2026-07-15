@@ -234,7 +234,7 @@ const SignInForm = ({ onSwitchTab }) => {
       case "STAFF":
         return "/staff/dashboard";
       case "CUSTOMER":
-        return "/profile";
+        return "/";
       default:
         return "/";
     }

@@ -178,21 +178,12 @@ const ProfilePage = () => {
   const handleSaveProfile = async () => {
     if (!validateProfile()) return;
     try {
-      const token =
-        localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:9999/api/users/${displayUser._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify(formData),
-        },
+      const response = await axiosClient.put(
+        `/users/${displayUser._id}`,
+        formData,
       );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Có lỗi xảy ra!");
+      const result = response.data;
+      if (!result.success) throw new Error(result.message || "Có lỗi xảy ra!");
       const updated = result.data;
       localStorage.setItem("user", JSON.stringify(updated));
       setDisplayUser({
@@ -206,31 +197,22 @@ const ProfilePage = () => {
       alert("Cập nhật thông tin thành công!");
       setIsEditing(false);
     } catch (e) {
-      alert(e.message);
+      alert(e.response?.data?.message || e.message);
     }
   };
 
   const handleSavePassword = async () => {
     if (!validatePassword()) return;
     try {
-      const token =
-        localStorage.getItem("accessToken") || localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:9999/api/users/${displayUser._id}/password`,
+      const response = await axiosClient.patch(
+        `/users/${displayUser._id}/password`,
         {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify({
-            oldPassword: passwordData.oldPassword,
-            newPassword: passwordData.newPassword,
-          }),
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
         },
       );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Đổi mật khẩu thất bại!");
+      const result = response.data;
+      if (!result.success) throw new Error(result.message || "Đổi mật khẩu thất bại!");
       alert("Đổi mật khẩu thành công!");
       setIsChangingPassword(false);
       setPasswordData({
@@ -239,7 +221,7 @@ const ProfilePage = () => {
         confirmPassword: "",
       });
     } catch (e) {
-      alert(e.message);
+      alert(e.response?.data?.message || e.message);
     }
   };
 
@@ -361,50 +343,13 @@ const ProfilePage = () => {
               <h1 className="pp-user-name">{displayUser.name || "User"}</h1>
               <p className="pp-user-email">{displayUser.email}</p>
               <div className="pp-user-badges">
-                <span
-                  className="pp-tier-badge"
-                  style={{
-                    background: tierConfig.color + "26",
-                    color: tierConfig.color,
-                    border: `1px solid ${tierConfig.color}66`,
-                  }}
-                >
-                  {tierConfig.label}
-                </span>
                 <span className="pp-member-since">
                   Member since {memberSince}
                 </span>
               </div>
             </div>
           </div>
-          <div className="pp-reward-box">
-            <span className="pp-reward-label">Reward Points</span>
-            <span className="pp-reward-value">
-              {rewardPoints.toLocaleString()}
-            </span>
-          </div>
         </div>
-
-        {/* Progress Bar */}
-        {tierConfig.next && (
-          <div className="pp-progress-card">
-            <div className="pp-progress-header">
-              <span className="pp-progress-label">
-                Progress to {tierConfig.next}
-              </span>
-              <span className="pp-progress-value">
-                {rewardPoints.toLocaleString()} /{" "}
-                {tierConfig.nextPoints.toLocaleString()} points
-              </span>
-            </div>
-            <div className="pp-progress-track">
-              <div
-                className="pp-progress-fill"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Tabs */}
         <div className="pp-tabs">
@@ -623,8 +568,8 @@ const ProfilePage = () => {
                   <div className="pp-fav-poster-wrap">
                     <img
                       className="pp-fav-poster"
-                      // Đọc chính xác trường .poster từ MongoDB trả về
-                      src={movie.poster || "placeholder-image-url.png"}
+                      // Đọc chính xác trường .posterUrl từ MongoDB trả về
+                      src={movie.posterUrl || "placeholder-image-url.png"}
                       alt={movie.title}
                       onError={(e) => {
                         e.target.onerror = null;

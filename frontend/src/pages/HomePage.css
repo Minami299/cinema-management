@@ -366,6 +366,7 @@ button.nav-item-link {
   letter-spacing: -0.5px;
   position: relative;
   padding-left: 14px;
+  color: #ffffff;
 }
 
 .section-main-title::before {
@@ -738,4 +739,91 @@ button.nav-item-link {
   text-align: center;
   font-size: 0.78rem;
   color: var(--theme-text-secondary);
+}
+
+/* PROFILE DROPDOWN MENU */
+.profile-dropdown-container {
+  position: relative;
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background-color: #121215;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 0;
+  width: 150px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-dropdown-menu .dropdown-item {
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  color: #c9ced6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.profile-dropdown-menu .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.profile-dropdown-menu .dropdown-item.logout {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ef4444;
+}
+
+.profile-dropdown-menu .dropdown-item.logout:hover {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ff6b6b;
+}
+
+/* FAVORITE BUTTON ON POSTER */
+.card-poster-area {
+  position: relative;
+}
+
+.card-poster-area .favorite-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 15;
+  transition: all 0.2s ease;
+}
+
+.card-poster-area .favorite-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.card-poster-area .favorite-btn svg {
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.card-poster-area .favorite-btn:active svg {
+  transform: scale(1.2);
+}
+
+/* Đặt nút yêu thích bên phải cho phim Coming Soon (vì Coming Soon badge ở bên trái) */
+.card-poster-area .coming-soon-indicator-badge ~ .favorite-btn {
+  right: 12px;
+  left: auto;
 }

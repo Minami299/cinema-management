@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { movieApi } from "../services/movieService";
+import axiosClient from "../services/axiosClient";
 import "./HomePage.css";
 
 const formatDateString = (dateStr) => {
@@ -27,11 +28,80 @@ const defaultSlides = [
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const homePath = user ? "/dashboard" : "/";
+  const { user, logout } = useAuth();
+  const roleName = String(
+    user?.role && typeof user.role === "object"
+      ? user.role.name
+      : user?.role || "",
+  ).toUpperCase();
+  const homePath = user && roleName !== "CUSTOMER" ? "/dashboard" : "/";
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState([]);
+
+  useEffect(() => {
+    if (!user) {
+      setFavoriteIds([]);
+      return;
+    }
+    const fetchFavorites = async () => {
+      try {
+        const userId = user._id || user.id;
+        const res = await axiosClient.get(`/users/${userId}/favorites`);
+        if (res.data && res.data.success) {
+          setFavoriteIds(res.data.data.map((m) => m._id || m.id));
+        }
+      } catch (error) {
+        console.error("Lỗi lấy danh sách yêu thích:", error);
+      }
+    };
+    fetchFavorites();
+  }, [user]);
+
+  const handleToggleFavorite = async (movieId) => {
+    if (!user) {
+      alert("Vui lòng đăng nhập để thực hiện chức năng này!");
+      navigate("/login");
+      return;
+    }
+
+    const userId = user._id || user.id;
+    const isFavorite = favoriteIds.includes(movieId);
+
+    try {
+      if (isFavorite) {
+        const res = await axiosClient.delete(`/users/${userId}/favorites`, {
+          data: { movieId },
+        });
+        if (res.data && res.data.success) {
+          setFavoriteIds((prev) => prev.filter((id) => id !== movieId));
+        }
+      } else {
+        const res = await axiosClient.post(`/users/${userId}/favorites`, {
+          movieId,
+        });
+        if (res.data && res.data.success) {
+          setFavoriteIds((prev) => [...prev, movieId]);
+        }
+      }
+    } catch (error) {
+      console.error("Lỗi cập nhật yêu thích:", error);
+      alert(error.response?.data?.message || "Không thể cập nhật danh sách yêu thích.");
+    }
+  };
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const closeDropdown = (e) => {
+      if (!e.target.closest(".profile-dropdown-container")) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("click", closeDropdown);
+    return () => document.removeEventListener("click", closeDropdown);
+  }, [showDropdown]);
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -129,31 +199,65 @@ const HomePage = () => {
           </nav>
 
           <div className="header-actions">
-            <button
-              className="profile-action-btn"
-              onClick={() => navigate(user ? "/profile" : "/login")}
-              title={user ? "Profile" : "Login"}
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {(!user || roleName !== "CUSTOMER") && (
+              <button
+                className="login-action-btn"
+                onClick={() => navigate(user ? "/dashboard" : "/login")}
               >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </button>
-            <button
-              className="login-action-btn"
-              onClick={() => navigate(user ? "/dashboard" : "/login")}
-            >
-              {user ? "Dashboard" : "Login / Register"}
-            </button>
+                {user ? "Dashboard" : "Login / Register"}
+              </button>
+            )}
+            <div className="profile-dropdown-container">
+              <button
+                className="profile-action-btn"
+                onClick={() => {
+                  if (user) {
+                    setShowDropdown(!showDropdown);
+                  } else {
+                    navigate("/login");
+                  }
+                }}
+                title={user ? "Account" : "Login"}
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </button>
+              {user && showDropdown && (
+                <div className="profile-dropdown-menu">
+                  <div
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      navigate("/profile");
+                    }}
+                  >
+                    Profile
+                  </div>
+                  <div
+                    className="dropdown-item logout"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+                        logout();
+                      }
+                    }}
+                  >
+                    Logout
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -285,6 +389,27 @@ const HomePage = () => {
                   src={movie.posterUrl || "https://via.placeholder.com/300x450"}
                   alt={movie.title}
                 />
+                <button
+                  className={`favorite-btn ${favoriteIds.includes(movie._id) ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(movie._id);
+                  }}
+                  title="Yêu thích"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill={favoriteIds.includes(movie._id) ? "#ef4444" : "none"}
+                    stroke={favoriteIds.includes(movie._id) ? "#ef4444" : "#ffffff"}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                </button>
                 <div className="rating-indicator-badge">
                   <svg
                     width="12"
@@ -360,6 +485,27 @@ const HomePage = () => {
                   src={movie.posterUrl || "https://via.placeholder.com/300x450"}
                   alt={movie.title}
                 />
+                <button
+                  className={`favorite-btn ${favoriteIds.includes(movie._id) ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite(movie._id);
+                  }}
+                  title="Yêu thích"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill={favoriteIds.includes(movie._id) ? "#ef4444" : "none"}
+                    stroke={favoriteIds.includes(movie._id) ? "#ef4444" : "#ffffff"}
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                </button>
                 <div className="coming-soon-indicator-badge">Coming Soon</div>
               </div>
               <div className="card-info-area">

@@ -143,6 +143,7 @@
   font-size: 1.55rem;
   font-weight: 800;
   margin: 0 0 4px;
+  color: #ffffff;
 }
 .pp-user-email {
   font-size: 0.9rem;
@@ -439,6 +440,7 @@
   font-size: 1.1rem;
   font-weight: 800;
   margin: 0 0 24px;
+  color: #ffffff;
 }
 .pp-info-grid {
   display: grid;
