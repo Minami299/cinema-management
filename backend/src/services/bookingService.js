@@ -1,6 +1,7 @@
 const Booking = require("../models/Booking");
 const Showtime = require("../models/Showtime");
 const mongoose = require("mongoose");
+const emailService = require("./emailService");
 
 class BookingService {
   async createBooking(userId, bookingData) {
@@ -39,6 +40,30 @@ class BookingService {
       });
 
       await newBooking.save();
+
+      // Gửi email xác nhận đặt vé thành công không đồng bộ cho mọi đơn hàng mới tạo
+      Booking.findById(newBooking._id)
+        .populate({
+          path: "showtime",
+          populate: [
+            { path: "movie", select: "title posterUrl" },
+            { path: "cinema", select: "name" },
+            { path: "room", select: "name" },
+          ],
+        })
+        .populate("foods.foodItem")
+        .populate("user", "name email")
+        .then((populatedBooking) => {
+          if (populatedBooking && populatedBooking.user?.email) {
+            emailService.sendBookingSuccessEmail(
+              populatedBooking.user.email,
+              populatedBooking.user,
+              populatedBooking
+            );
+          }
+        })
+        .catch((err) => console.error("Lỗi gửi mail sau đặt vé:", err));
+
       return newBooking;
     } catch (error) {
       throw error;
@@ -162,11 +187,38 @@ class BookingService {
     if (paymentStatus === "Completed")
       updateFields["payment.paidAt"] = new Date();
 
-    return await Booking.findByIdAndUpdate(
+    const updated = await Booking.findByIdAndUpdate(
       id,
       { $set: updateFields },
       { new: true },
     );
+
+    if (updated && updated.status === "Confirmed") {
+      // Gửi email xác nhận đặt vé thành công không đồng bộ
+      Booking.findById(updated._id)
+        .populate({
+          path: "showtime",
+          populate: [
+            { path: "movie", select: "title posterUrl" },
+            { path: "cinema", select: "name" },
+            { path: "room", select: "name" },
+          ],
+        })
+        .populate("foods.foodItem")
+        .populate("user", "name email")
+        .then((populatedBooking) => {
+          if (populatedBooking && populatedBooking.user?.email) {
+            emailService.sendBookingSuccessEmail(
+              populatedBooking.user.email,
+              populatedBooking.user,
+              populatedBooking
+            );
+          }
+        })
+        .catch((err) => console.error("Lỗi gửi mail khi duyệt vé:", err));
+    }
+
+    return updated;
   }
 }
 
