@@ -21,6 +21,8 @@ const UserSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     // Nhúng trực tiếp mảng các bộ phim yêu thích để tăng tốc độ truy vấn
     favorites: [{ type: String, ref: "Movie" }],
+    resetPasswordOTP: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true },
 );

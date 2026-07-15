@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import AuthLayout from "./pages/AuthLayout";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import MovieDetailPage from "./pages/MovieDetailPage";
@@ -47,6 +48,10 @@ function App() {
 
           <Route path="/register" element={<AuthLayout />}>
             <Route index element={<RegisterPage />} />
+          </Route>
+
+          <Route path="/forgot-password" element={<AuthLayout />}>
+            <Route index element={<ForgotPasswordPage />} />
           </Route>
 
           {/* ================= REDIRECT DASHBOARD ================= */}
