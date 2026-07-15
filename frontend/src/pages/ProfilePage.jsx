@@ -4,40 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import axiosClient from "../services/axiosClient";
 import "./ProfilePage.css";
 
-const TIER_CONFIG = {
-  bronze: {
-    label: "Bronze Member",
-    color: "#cd7f32",
-    next: "Silver",
-    nextPoints: 1000,
-  },
-  silver: {
-    label: "Silver Member",
-    color: "#9ca3af",
-    next: "Gold",
-    nextPoints: 2000,
-  },
-  gold: {
-    label: "Gold Member",
-    color: "#ffb400",
-    next: "Platinum",
-    nextPoints: 3000,
-  },
-  platinum: {
-    label: "Platinum Member",
-    color: "#a78bfa",
-    next: null,
-    nextPoints: null,
-  },
-};
-
-function getTier(points) {
-  if (points >= 3000) return "platinum";
-  if (points >= 2000) return "gold";
-  if (points >= 1000) return "silver";
-  return "bronze";
-}
-
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
@@ -52,10 +18,6 @@ const ProfilePage = () => {
 
   const [bookings, setBookings] = useState([]);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
-
-  const rewardPoints = 2450;
-  const tier = getTier(rewardPoints);
-  const tierConfig = TIER_CONFIG[tier];
 
   const [displayUser, setDisplayUser] = useState({
     _id: "",
@@ -261,10 +223,6 @@ const ProfilePage = () => {
         year: "numeric",
       })
     : "January 2024";
-
-  const progressPct = tierConfig.nextPoints
-    ? Math.min((rewardPoints / tierConfig.nextPoints) * 100, 100)
-    : 100;
 
   return (
     <div className="pp-page">

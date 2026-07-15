@@ -48,11 +48,11 @@ const HomePage = () => {
   const MOVIES_PER_PAGE = 6;
 
   useEffect(() => {
-    if (!user) {
-      setFavoriteIds([]);
-      return;
-    }
     const fetchFavorites = async () => {
+      if (!user) {
+        setFavoriteIds((prev) => (prev.length === 0 ? prev : []));
+        return;
+      }
       try {
         const userId = user._id || user.id;
         const res = await axiosClient.get(`/users/${userId}/favorites`);
