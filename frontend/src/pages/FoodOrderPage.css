@@ -1,0 +1,33 @@
+.food-order-page {
+  --food-black: #080810;
+  --food-surface: linear-gradient(135deg, rgba(18, 18, 38, .9), rgba(12, 12, 24, .95));
+  --food-primary: #2563eb;
+  --food-primary-hover: #1d4ed8;
+  --food-highlight: #93c5fd;
+  --food-money: #34d399;
+  --food-muted: #8585a8;
+  --food-border: rgba(255, 255, 255, .07);
+  min-height: 100vh; background: var(--food-black); color: #fff;
+  padding: 30px max(24px, calc((100% - 1200px) / 2)); font-family: Arial, sans-serif;
+}
+.food-order-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--food-border); padding-bottom: 22px; }
+.food-order-header p { color: var(--food-highlight); font-size: 12px; letter-spacing: 2px; margin: 0; }
+.food-order-header h1 { margin: 4px 0 0; }
+.food-back-button { background: transparent; border: 1px solid var(--food-border); border-radius: 7px; color: #fff; padding: 10px 14px; cursor: pointer; transition: .2s; }
+.food-back-button:hover { border-color: var(--food-primary); color: var(--food-highlight); }
+.food-order-content { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; margin-top: 32px; }
+.food-order-intro h2, .food-cart h2 { margin: 0 0 8px; }
+.food-order-intro p, .food-menu-body p, .cart-empty { color: var(--food-muted); }
+.food-menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; margin-top: 22px; }
+.food-menu-card { overflow: hidden; background: var(--food-surface); border: 1px solid var(--food-border); border-radius: 12px; transition: transform .2s, border-color .2s; }
+.food-menu-card:hover { border-color: rgba(37, 99, 235, .65); transform: translateY(-3px); }
+.food-menu-card img { width: 100%; height: 145px; object-fit: cover; background: #1b1b34; }
+.food-menu-body { padding: 15px; }.food-type { color: var(--food-highlight); font-size: 12px; text-transform: uppercase; }.food-menu-body h3 { margin: 7px 0; }.food-menu-body p { font-size: 14px; min-height: 40px; }.food-menu-body > strong { color: var(--food-money); }
+.food-counter { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 12px; }
+.food-counter button { width: 30px; height: 30px; border: 0; border-radius: 50%; font-size: 20px; background: var(--food-primary); color: #fff; cursor: pointer; }.food-counter button:hover:not(:disabled) { background: var(--food-primary-hover); }.food-counter button:disabled { opacity: .4; cursor: not-allowed; }
+.food-cart { height: max-content; position: sticky; top: 20px; background: var(--food-surface); border: 1px solid var(--food-border); border-radius: 12px; padding: 22px; }
+.cart-line { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--food-border); padding: 13px 0; font-size: 14px; }.cart-line small { color: var(--food-highlight); }
+.food-total { display: flex; justify-content: space-between; color: var(--food-money); font-size: 18px; padding: 20px 0; }.food-cart label { display: grid; gap: 7px; color: var(--food-muted); font-size: 14px; }.food-cart select { background: #121225; border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; color: #dfe5ff; padding: 11px; }
+.food-payment-qr { margin-top: 18px; padding: 14px; text-align: center; background: rgba(37, 99, 235, .08); border: 1px solid rgba(96, 165, 250, .25); border-radius: 10px; }.food-payment-qr p { margin: 0 0 10px; color: var(--food-highlight); font-size: 13px; }.food-payment-qr img { display: block; width: min(100%, 200px); margin: 0 auto 9px; padding: 7px; border-radius: 6px; background: #fff; }.food-payment-qr small { color: var(--food-money); }
+.food-submit { width: 100%; border: 0; border-radius: 7px; background: linear-gradient(135deg, var(--food-primary), var(--food-primary-hover)); color: #fff; font-weight: bold; padding: 13px; margin-top: 20px; cursor: pointer; transition: .2s; }.food-submit:hover:not(:disabled) { filter: brightness(1.1); }.food-submit:disabled { opacity: .6; }
+@media (max-width: 800px) { .food-order-page { padding: 20px; }.food-order-content { grid-template-columns: 1fr; }.food-cart { position: static; }.food-order-header h1 { font-size: 24px; } }

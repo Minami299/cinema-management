@@ -11,6 +11,7 @@ const foodItemRouter = require("./foodItemRouter");
 const roomRouter = require("./roomRouter");
 const roleRouter = require("./roleRouter");
 const notificationRouter = require("./notificationRouter");
+const foodOrderRouter = require("./foodOrderRouter");
 
 router.use("/auth", authRouter);
 router.use("/movies", movieRouter);
@@ -19,6 +20,7 @@ router.use("/showtimes", showtimeRouter);
 router.use("/cinemas", cinemaRouter);
 router.use("/users", userRouter);
 router.use("/food-items", foodItemRouter);
+router.use("/food-orders", foodOrderRouter);
 router.use("/rooms", roomRouter);
 router.use("/roles", roleRouter);
 router.use("/notifications", notificationRouter);
