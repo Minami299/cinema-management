@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { movieApi } from "../services/movieService";
@@ -40,6 +40,12 @@ const HomePage = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState([]);
+  const [nowShowingPage, setNowShowingPage] = useState(1);
+  const [comingSoonPage, setComingSoonPage] = useState(1);
+  const [selectedNowShowingGenre, setSelectedNowShowingGenre] = useState("All");
+  const [selectedComingSoonGenre, setSelectedComingSoonGenre] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const MOVIES_PER_PAGE = 6;
 
   useEffect(() => {
     if (!user) {
@@ -104,6 +110,17 @@ const HomePage = () => {
   }, [showDropdown]);
 
   useEffect(() => {
+    if (searchQuery === "") return;
+    const closeSearch = (e) => {
+      if (!e.target.closest(".header-search-wrap")) {
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("click", closeSearch);
+    return () => document.removeEventListener("click", closeSearch);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const fetchMovies = async () => {
       try {
         setLoadingMovies(true);
@@ -120,9 +137,107 @@ const HomePage = () => {
     fetchMovies();
   }, []);
 
+  // Trích xuất thể loại cho Now Showing
+  const nowShowingGenres = useMemo(() => {
+    const genresSet = new Set();
+    movies.filter(m => m.status === "Now Showing").forEach((movie) => {
+      if (Array.isArray(movie.genre)) {
+        movie.genre.forEach((g) => genresSet.add(g.trim()));
+      } else if (movie.genre) {
+        movie.genre.split(",").forEach((g) => genresSet.add(g.trim()));
+      }
+    });
+    return ["All", ...Array.from(genresSet).sort()];
+  }, [movies]);
+
+  // Trích xuất thể loại cho Coming Soon
+  const comingSoonGenres = useMemo(() => {
+    const genresSet = new Set();
+    movies.filter(m => m.status === "Coming Soon").forEach((movie) => {
+      if (Array.isArray(movie.genre)) {
+        movie.genre.forEach((g) => genresSet.add(g.trim()));
+      } else if (movie.genre) {
+        movie.genre.split(",").forEach((g) => genresSet.add(g.trim()));
+      }
+    });
+    return ["All", ...Array.from(genresSet).sort()];
+  }, [movies]);
+
+  // Xử lý đổi thể loại (reset phân trang về 1)
+  const handleNowShowingGenreChange = (genre) => {
+    setSelectedNowShowingGenre(genre);
+    setNowShowingPage(1);
+  };
+
+  const handleComingSoonGenreChange = (genre) => {
+    setSelectedComingSoonGenre(genre);
+    setComingSoonPage(1);
+  };
+
+  // Xử lý thay đổi ô tìm kiếm
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   // Xây dựng danh sách slide từ các phim Now Showing có bannerUrl
   const nowShowingMovies = movies.filter((m) => m.status === "Now Showing");
   const comingSoonMovies = movies.filter((m) => m.status === "Coming Soon");
+
+  // Lọc phim theo thể loại đã chọn
+  const filteredNowShowingMovies = useMemo(() => {
+    let result = nowShowingMovies;
+
+    if (selectedNowShowingGenre !== "All") {
+      result = result.filter((m) => {
+        if (Array.isArray(m.genre)) {
+          return m.genre.some(g => g.trim() === selectedNowShowingGenre);
+        } else if (m.genre) {
+          return m.genre.split(",").map(g => g.trim()).includes(selectedNowShowingGenre);
+        }
+        return false;
+      });
+    }
+
+    return result;
+  }, [nowShowingMovies, selectedNowShowingGenre]);
+
+  const filteredComingSoonMovies = useMemo(() => {
+    let result = comingSoonMovies;
+
+    if (selectedComingSoonGenre !== "All") {
+      result = result.filter((m) => {
+        if (Array.isArray(m.genre)) {
+          return m.genre.some(g => g.trim() === selectedComingSoonGenre);
+        } else if (m.genre) {
+          return m.genre.split(",").map(g => g.trim()).includes(selectedComingSoonGenre);
+        }
+        return false;
+      });
+    }
+
+    return result;
+  }, [comingSoonMovies, selectedComingSoonGenre]);
+
+  // Kết quả tìm kiếm hiển thị trên dropdown
+  const searchResults = useMemo(() => {
+    if (searchQuery.trim() === "") return [];
+    const q = searchQuery.toLowerCase().trim();
+    return movies.filter((m) => m.title && m.title.toLowerCase().includes(q));
+  }, [movies, searchQuery]);
+
+  const paginatedNowShowing = useMemo(() => {
+    const startIndex = (nowShowingPage - 1) * MOVIES_PER_PAGE;
+    return filteredNowShowingMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);
+  }, [filteredNowShowingMovies, nowShowingPage, MOVIES_PER_PAGE]);
+
+  const totalNowShowingPages = Math.ceil(filteredNowShowingMovies.length / MOVIES_PER_PAGE);
+
+  const paginatedComingSoon = useMemo(() => {
+    const startIndex = (comingSoonPage - 1) * MOVIES_PER_PAGE;
+    return filteredComingSoonMovies.slice(startIndex, startIndex + MOVIES_PER_PAGE);
+  }, [filteredComingSoonMovies, comingSoonPage, MOVIES_PER_PAGE]);
+
+  const totalComingSoonPages = Math.ceil(filteredComingSoonMovies.length / MOVIES_PER_PAGE);
 
   const heroSlides =
     nowShowingMovies.length > 0
@@ -199,6 +314,65 @@ const HomePage = () => {
           </nav>
 
           <div className="header-actions">
+            {/* SEARCH BOX */}
+            <div className="header-search-wrap">
+              <input
+                type="text"
+                placeholder="Tìm kiếm phim..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="header-search-input"
+              />
+              <svg
+                className="search-icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+
+              {searchQuery.trim() !== "" && (
+                <div className="search-results-dropdown">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((movie) => (
+                      <div 
+                        key={movie._id} 
+                        className="search-result-item"
+                        onClick={() => {
+                          setSearchQuery("");
+                          navigate(`/movie/${movie._id}`);
+                        }}
+                      >
+                        <img 
+                          src={movie.posterUrl || "https://via.placeholder.com/40x60"} 
+                          alt={movie.title} 
+                          className="result-item-poster"
+                        />
+                        <div className="result-item-info">
+                          <p className="result-item-title">{movie.title}</p>
+                          <span className="result-item-genre">
+                            {Array.isArray(movie.genre) ? movie.genre.join(", ") : movie.genre}
+                          </span>
+                        </div>
+                        <span className={`result-item-status-badge ${movie.status === "Now Showing" ? "now-showing" : "coming-soon"}`}>
+                          {movie.status === "Now Showing" ? "Đang chiếu" : "Sắp chiếu"}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="search-no-results">Không tìm thấy phim phù hợp</div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {(!user || roleName !== "CUSTOMER") && (
               <button
                 className="login-action-btn"
@@ -357,6 +531,22 @@ const HomePage = () => {
           </a>
         </div>
 
+        {/* NOW SHOWING GENRE FILTER */}
+        <div className="genre-filter-container inline-filter">
+          <span className="filter-label">Thể loại:</span>
+          <div className="genre-buttons-list">
+            {nowShowingGenres.map((genre) => (
+              <button
+                key={genre}
+                className={`genre-filter-btn ${selectedNowShowingGenre === genre ? "active" : ""}`}
+                onClick={() => handleNowShowingGenreChange(genre)}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {loadingMovies && (
           <p
             style={{
@@ -382,7 +572,7 @@ const HomePage = () => {
         )}
 
         <div className="movies-responsive-grid">
-          {nowShowingMovies.map((movie) => (
+          {paginatedNowShowing.map((movie) => (
             <div className="movie-showcase-card" key={movie._id}>
               <div className="card-poster-area">
                 <img
@@ -457,12 +647,58 @@ const HomePage = () => {
             </div>
           ))}
         </div>
+
+        {totalNowShowingPages > 1 && (
+          <div className="pagination-wrapper">
+            <button 
+              className="pagination-btn" 
+              onClick={() => setNowShowingPage(p => Math.max(1, p - 1))}
+              disabled={nowShowingPage === 1}
+            >
+              &larr; Previous
+            </button>
+            <div className="pagination-pages">
+              {Array.from({ length: totalNowShowingPages }).map((_, idx) => (
+                <button 
+                  key={idx}
+                  className={`pagination-page-btn ${nowShowingPage === idx + 1 ? "active" : ""}`}
+                  onClick={() => setNowShowingPage(idx + 1)}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+            <button 
+              className="pagination-btn" 
+              onClick={() => setNowShowingPage(p => Math.min(totalNowShowingPages, p + 1))}
+              disabled={nowShowingPage === totalNowShowingPages}
+            >
+              Next &rarr;
+            </button>
+          </div>
+        )}
       </section>
 
       {/* COMING SOON */}
       <section className="section-wrapper" style={{ paddingTop: 0 }}>
         <div className="section-header-row">
           <h2 className="section-main-title">Coming Soon</h2>
+        </div>
+
+        {/* COMING SOON GENRE FILTER */}
+        <div className="genre-filter-container inline-filter">
+          <span className="filter-label">Thể loại:</span>
+          <div className="genre-buttons-list">
+            {comingSoonGenres.map((genre) => (
+              <button
+                key={genre}
+                className={`genre-filter-btn ${selectedComingSoonGenre === genre ? "active" : ""}`}
+                onClick={() => handleComingSoonGenreChange(genre)}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
         </div>
 
         {!loadingMovies && comingSoonMovies.length === 0 && (
@@ -478,7 +714,7 @@ const HomePage = () => {
         )}
 
         <div className="movies-responsive-grid">
-          {comingSoonMovies.map((movie) => (
+          {paginatedComingSoon.map((movie) => (
             <div className="movie-showcase-card" key={movie._id}>
               <div className="card-poster-area">
                 <img
@@ -549,6 +785,36 @@ const HomePage = () => {
             </div>
           ))}
         </div>
+
+        {totalComingSoonPages > 1 && (
+          <div className="pagination-wrapper">
+            <button 
+              className="pagination-btn" 
+              onClick={() => setComingSoonPage(p => Math.max(1, p - 1))}
+              disabled={comingSoonPage === 1}
+            >
+              &larr; Previous
+            </button>
+            <div className="pagination-pages">
+              {Array.from({ length: totalComingSoonPages }).map((_, idx) => (
+                <button 
+                  key={idx}
+                  className={`pagination-page-btn ${comingSoonPage === idx + 1 ? "active" : ""}`}
+                  onClick={() => setComingSoonPage(idx + 1)}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+            <button 
+              className="pagination-btn" 
+              onClick={() => setComingSoonPage(p => Math.min(totalComingSoonPages, p + 1))}
+              disabled={comingSoonPage === totalComingSoonPages}
+            >
+              Next &rarr;
+            </button>
+          </div>
+        )}
       </section>
 
       {/* SPECIAL PROMOTIONS */}
