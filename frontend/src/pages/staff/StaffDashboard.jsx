@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   createFoodItem,
@@ -23,12 +23,10 @@ const statusText = { Pending: "Chờ xác nhận", Confirmed: "Đã xác nhận"
 const formatCurrency = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value || 0);
 const formatDate = (date) => date ? new Date(date).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" }) : "—";
 
-export default function StaffDashboard() {
+export default function StaffDashboard({ initialTab = "overview" }) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
-  const initialTab = searchParams.get("tab");
-  const [activeNav, setActiveNav] = useState(initialTab === "food" ? "food" : "overview");
+  const [activeNav, setActiveNav] = useState(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [foods, setFoods] = useState([]);
@@ -57,12 +55,17 @@ export default function StaffDashboard() {
 
   const changeNav = (nextNav) => {
     setActiveNav(nextNav);
-    if (nextNav === "bookings") loadBookings();
-    if (nextNav === "food") loadFoods();
+    const paths = {
+      overview: "/staff/dashboard",
+      bookings: "/staff/tickets",
+      food: "/staff/food",
+    };
+    navigate(paths[nextNav]);
   };
 
-  // Mở trực tiếp tab Food từ thanh điều hướng chính.
+  // Tải dữ liệu khi mở trực tiếp trang vé hoặc F&B.
   useEffect(() => {
+    if (initialTab === "bookings") loadBookings();
     if (initialTab === "food") loadFoods();
   }, []);
 

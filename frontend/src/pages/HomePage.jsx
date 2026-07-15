@@ -127,13 +127,22 @@ const HomePage = () => {
               Promotions
             </a>
             {canManageFood && (
-              <button
-                type="button"
-                className="nav-item-link"
-                onClick={() => navigate("/staff/dashboard?tab=food")}
-              >
-                Food & Drink
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="nav-item-link"
+                  onClick={() => navigate("/staff/tickets")}
+                >
+                  List Tickets
+                </button>
+                <button
+                  type="button"
+                  className="nav-item-link"
+                  onClick={() => navigate("/staff/food")}
+                >
+                  Food & Drink
+                </button>
+              </>
             )}
             <a href="#contact" className="nav-item-link">
               Contact
