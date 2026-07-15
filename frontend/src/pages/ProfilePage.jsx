@@ -208,6 +208,47 @@ const ProfilePage = () => {
     if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) logout();
   };
 
+  const handleCancelBooking = async (booking) => {
+    const movieTitle = booking.showtime?.movie?.title || "Phim";
+    const showDate = booking.showtime?.date
+      ? new Date(booking.showtime.date).toLocaleDateString("vi-VN")
+      : "N/A";
+    const showTime = booking.showtime?.startTime || "N/A";
+    const seatsStr = booking.tickets?.map((t) => t.seatNumber).join(", ") || "N/A";
+    const totalVal = booking.totalAmount
+      ? booking.totalAmount.toLocaleString("vi-VN") + " VNĐ"
+      : "0 VNĐ";
+
+    const confirmMsg = `Bạn có chắc chắn muốn hủy đơn đặt vé này không?\n\nThông tin vé hủy:\n- Phim: ${movieTitle}\n- Ngày chiếu: ${showDate}\n- Suất chiếu: ${showTime}\n- Ghế: ${seatsStr}\n- Tổng tiền: ${totalVal}\n\nSau khi hủy, vé không thể phục hồi và ghế sẽ được giải phóng!`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const response = await axiosClient.put(`/bookings/${booking._id || booking.id}/cancel`);
+      if (response.data && response.data.success) {
+        alert("Hủy vé thành công! Email xác nhận hủy đã được gửi.");
+        
+        // Cập nhật lại danh sách đặt vé ở giao diện
+        setBookings((prev) =>
+          prev.map((b) =>
+            (b._id === booking._id || b.id === booking.id)
+              ? { ...b, status: "Cancelled", payment: { ...b.payment, status: "Cancelled" } }
+              : b
+          )
+        );
+        
+        // Cập nhật lại vé đang mở trong modal
+        setSelectedTicket((prev) =>
+          prev && (prev._id === booking._id || prev.id === booking.id)
+            ? { ...prev, status: "Cancelled", payment: { ...prev.payment, status: "Cancelled" } }
+            : prev
+        );
+      }
+    } catch (error) {
+      alert(error.response?.data?.message || error.message || "Hủy vé thất bại.");
+    }
+  };
+
   const initials = displayUser.name
     ? displayUser.name
         .split(" ")
@@ -777,6 +818,14 @@ const ProfilePage = () => {
                     <span className="grid-label">ĐỒ ĂN KÈM:</span>
                     <span className="foods-list">{selectedTicket.foods.map(f => `${f.foodItem?.name || "Combo"} (x${f.quantity})`).join(", ")}</span>
                   </div>
+                )}
+                {selectedTicket.status !== "Cancelled" && (
+                  <button 
+                    className="ticket-cancel-btn"
+                    onClick={() => handleCancelBooking(selectedTicket)}
+                  >
+                    Hủy Vé
+                  </button>
                 )}
               </div>
             </div>

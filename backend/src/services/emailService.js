@@ -374,6 +374,196 @@ class EmailService {
       console.error("[EmailService] Lỗi khi gửi email OTP:", error.message);
     }
   }
+
+  async sendBookingCancelledEmail(userEmail, user, booking) {
+    if (!process.env.EMAIL_USER || process.env.EMAIL_USER === "your_email@gmail.com") {
+      console.warn("Email service is not configured. Please set EMAIL_USER and EMAIL_PASS in your .env file.");
+      return;
+    }
+
+    try {
+      const movieTitle = booking.showtime?.movie?.title || "Phim chưa cập nhật";
+      const cinemaName = booking.showtime?.cinema?.name || "Rạp chưa cập nhật";
+      const roomName = booking.showtime?.room?.name || "N/A";
+      const showDate = booking.showtime?.date
+        ? new Date(booking.showtime.date).toLocaleDateString("vi-VN")
+        : "N/A";
+      const showTime = booking.showtime?.startTime || "N/A";
+      const seatsStr = booking.tickets?.map((t) => t.seatNumber).join(", ") || "N/A";
+      const totalVal = booking.totalAmount
+        ? booking.totalAmount.toLocaleString("vi-VN") + " VNĐ"
+        : "0 VNĐ";
+      const bookingId = booking._id || booking.id;
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Xác nhận hủy vé thành công - CinemaHub</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background-color: #121214;
+              color: #e4e4e7;
+              margin: 0;
+              padding: 0;
+            }
+            .email-wrapper {
+              max-width: 600px;
+              margin: 30px auto;
+              background: #1e1e24;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+              border: 1px solid #2e2e38;
+            }
+            .header {
+              background: linear-gradient(135deg, #4c0519 0%, #1e1b4b 100%);
+              padding: 30px 20px;
+              text-align: center;
+              border-bottom: 1px solid #2e2e38;
+            }
+            .logo {
+              color: #ffffff;
+              font-size: 24px;
+              font-weight: 800;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin: 0;
+            }
+            .logo span {
+              color: #ff3b30;
+            }
+            .content {
+              padding: 30px;
+            }
+            .title {
+              font-size: 20px;
+              color: #fca5a5;
+              margin-top: 0;
+              margin-bottom: 10px;
+              text-align: center;
+              font-weight: 700;
+            }
+            .subtitle {
+              color: #9ca3af;
+              font-size: 14px;
+              margin-bottom: 30px;
+              text-align: center;
+            }
+            .ticket-card {
+              border: 1px dashed #f43f5e;
+              border-radius: 12px;
+              padding: 20px;
+              background: #1c1917;
+              margin-bottom: 25px;
+            }
+            .movie-title {
+              font-size: 18px;
+              color: #fca5a5;
+              font-weight: bold;
+              margin-bottom: 15px;
+              border-bottom: 1px solid #2e2e38;
+              padding-bottom: 10px;
+            }
+            .grid {
+              display: table;
+              width: 100%;
+            }
+            .grid-row {
+              display: table-row;
+            }
+            .grid-cell {
+              display: table-cell;
+              padding: 8px 0;
+              font-size: 14px;
+            }
+            .label {
+              color: #9ca3af;
+              font-weight: 500;
+            }
+            .value {
+              color: #ffffff;
+              font-weight: bold;
+              text-align: right;
+            }
+            .footer {
+              padding: 20px;
+              text-align: center;
+              font-size: 12px;
+              color: #6b7280;
+              background: #18181c;
+              border-top: 1px solid #2e2e38;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-wrapper">
+            <div class="header">
+              <h1 class="logo">Cinema<span>Hub</span></h1>
+            </div>
+            <div class="content">
+              <h2 class="title">Xác Nhận Hủy Vé Thành Công</h2>
+              <p class="subtitle">Chào ${user.name || "khách hàng"}, yêu cầu hủy đơn đặt vé của bạn tại CinemaHub đã được xử lý thành công. Dưới đây là thông tin đơn đặt vé đã bị hủy:</p>
+              
+              <div class="ticket-card">
+                <div class="movie-title">${movieTitle} (ĐÃ HỦY)</div>
+                <div class="grid">
+                  <div class="grid-row">
+                    <div class="grid-cell label">Rạp:</div>
+                    <div class="grid-cell value">${cinemaName}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Phòng chiếu:</div>
+                    <div class="grid-cell value">${roomName}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Ngày chiếu:</div>
+                    <div class="grid-cell value">${showDate}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Suất chiếu:</div>
+                    <div class="grid-cell value">${showTime}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Danh sách ghế giải phóng:</div>
+                    <div class="grid-cell value" style="color: #f43f5e;">${seatsStr}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Tổng tiền hoàn/đã hủy:</div>
+                    <div class="grid-cell value" style="color: #9ca3af; text-decoration: line-through;">${totalVal}</div>
+                  </div>
+                  <div class="grid-row">
+                    <div class="grid-cell label">Trạng thái hiện tại:</div>
+                    <div class="grid-cell value" style="color: #f43f5e; font-weight: bold;">Đã hủy</div>
+                  </div>
+                </div>
+              </div>
+              
+              <p style="font-size: 13px; color: #9ca3af; text-align: center;">Mã QR của vé cũ ${bookingId.toString().toUpperCase()} hiện đã bị vô hiệu hóa hoàn toàn.</p>
+            </div>
+            <div class="footer">
+              Đây là email tự động từ hệ thống CinemaHub. Vui lòng không trả lời email này.<br>
+              &copy; 2026 CinemaHub. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await this.transporter.sendMail({
+        from: `"CinemaHub" <${process.env.EMAIL_USER}>`,
+        to: userEmail,
+        subject: `[CinemaHub] Thông báo hủy vé thành công: ${movieTitle}`,
+        html: htmlContent,
+      });
+
+      console.log(`[EmailService] Đã gửi email xác nhận hủy vé tới: ${userEmail}`);
+    } catch (error) {
+      console.error("[EmailService] Lỗi khi gửi email hủy vé:", error.message);
+    }
+  }
 }
 
 module.exports = new EmailService();

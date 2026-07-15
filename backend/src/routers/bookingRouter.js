@@ -6,6 +6,7 @@ const authorizeRoles = require("../middlewares/roleMiddleware");
 
 router.post("/", authMiddleware, bookingController.create);
 router.get("/history/:userId", authMiddleware, bookingController.getHistory);
+router.put("/:id/cancel", authMiddleware, bookingController.cancelBooking);
 
 router.get(
   "/all",

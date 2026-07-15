@@ -872,3 +872,29 @@
     margin-left: 0;
   }
 }
+
+.ticket-cancel-btn {
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+  margin-top: 10px;
+  align-self: flex-start;
+}
+
+.ticket-cancel-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
+}
+
+.ticket-cancel-btn:active {
+  transform: translateY(0);
+}
