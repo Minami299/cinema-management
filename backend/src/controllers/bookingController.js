@@ -23,6 +23,28 @@ class BookingController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+  async getAll(req, res) {
+    try {
+      const bookings = await bookingService.getAllBookings();
+      res.status(200).json({ success: true, data: bookings });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateStatus(req, res) {
+    try {
+      const { status } = req.body;
+      if (!["Pending", "Confirmed", "Cancelled"].includes(status)) {
+        return res.status(400).json({ success: false, message: "Trạng thái vé không hợp lệ." });
+      }
+      const booking = await bookingService.updateBookingStatus(req.params.id, status);
+      if (!booking) return res.status(404).json({ success: false, message: "Không tìm thấy đơn đặt vé." });
+      res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
 }
 
 module.exports = new BookingController();

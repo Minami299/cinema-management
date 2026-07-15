@@ -10,4 +10,7 @@ router.post("/", authMiddleware, bookingController.create);
 // Xem danh sách đặt vé: ADMIN, MANAGER, STAFF
 // router.get("/", authMiddleware, authorizeRoles("ADMIN", "MANAGER", "STAFF"), bookingController.getAll);
 
+router.get("/", authMiddleware, authorizeRoles("ADMIN", "MANAGER", "STAFF"), bookingController.getAll);
+router.patch("/:id/status", authMiddleware, authorizeRoles("ADMIN", "MANAGER", "STAFF"), bookingController.updateStatus);
+
 module.exports = router;

@@ -69,6 +69,29 @@ class BookingService {
       })
       .sort({ createdAt: -1 });
   }
+
+  async getAllBookings() {
+    return Booking.find()
+      .populate("user", "name email phone")
+      .populate({ path: "showtime", populate: [
+        { path: "movie", select: "title" },
+        { path: "cinema", select: "name" },
+        { path: "room", select: "name" },
+      ] })
+      .populate("foods.foodItem", "name")
+      .sort({ createdAt: -1 });
+  }
+
+  async updateBookingStatus(id, status) {
+    const booking = await Booking.findById(id);
+    if (!booking) return null;
+    booking.status = status;
+    if (status === "Confirmed" && booking.payment?.status === "Pending") {
+      booking.payment.status = "Completed";
+      booking.payment.paidAt = new Date();
+    }
+    return booking.save();
+  }
 }
 
 module.exports = new BookingService();
