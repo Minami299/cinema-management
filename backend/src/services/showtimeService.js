@@ -3,13 +3,11 @@ const Room = require("../models/Room");
 
 class ShowtimeService {
   async createShowtime(data) {
-    // 1. Tìm phòng chiếu để lấy sơ đồ ghế cố định
     const room = await Room.findById(data.room);
     if (!room) {
       throw new Error("Phòng chiếu không tồn tại.");
     }
 
-    // 2. Kiểm tra trùng lịch chiếu (Cùng phòng, cùng ngày, khoảng thời gian chồng lấn)
     const overlapping = await Showtime.findOne({
       room: data.room,
       date: data.date,
@@ -18,14 +16,17 @@ class ShowtimeService {
           startTime: { $lte: data.startTime },
           endTime: { $gte: data.startTime },
         },
-        { startTime: { $lte: data.endTime }, endTime: { $gte: data.endTime } },
+        {
+          startTime: { $lte: data.endTime },
+          endTime: { $gte: data.endTime },
+        },
       ],
     });
+
     if (overlapping) {
       throw new Error("Khung giờ này đã có suất chiếu khác trong phòng.");
     }
 
-    // 3. Tự động ánh xạ ghế cố định thành trạng thái ghế trống động cho suất chiếu
     const seatStatus = room.seats.map((seat) => ({
       seatNumber: seat.seatNumber,
       status: "Available",
@@ -33,25 +34,87 @@ class ShowtimeService {
       lockedAt: null,
     }));
 
-    // 4. Tạo suất chiếu mới
     const newShowtime = new Showtime({
       ...data,
       seatStatus,
     });
+
     return await newShowtime.save();
   }
 
-  async getShowtimesByCinema(cinemaId) {
-    return await Showtime.find({ cinema: cinemaId })
-      .populate("movie", "title duration imageUrl")
-      .populate("room", "name type");
+  async getAllShowtimes() {
+    return await Showtime.find()
+      .populate("movie", "title posterUrl")
+      .populate("cinema", "name")
+      .populate("room", "name type")
+      .sort({ date: 1, startTime: 1 });
   }
 
-  async getShowtimeDetails(id) {
+  async getShowtimeById(id) {
     return await Showtime.findById(id)
       .populate("movie")
       .populate("cinema")
       .populate("room");
+  }
+
+  async getShowtimesByMovie(movieId) {
+    return await Showtime.find({ movie: movieId }).populate("cinema room");
+  }
+
+  async getShowtimesByCinema(cinemaId) {
+    return await Showtime.find({ cinema: cinemaId })
+      .populate("movie", "title duration posterUrl")
+      .populate("room", "name type");
+  }
+
+  async updateShowtime(id, updateData) {
+    const showtime = await Showtime.findById(id);
+    if (!showtime) {
+      throw new Error("Suất chiếu không tồn tại.");
+    }
+
+    const nextRoom = updateData.room || showtime.room;
+    const nextDate = updateData.date || showtime.date;
+    const nextStart = updateData.startTime || showtime.startTime;
+    const nextEnd = updateData.endTime || showtime.endTime;
+
+    const overlapping = await Showtime.findOne({
+      _id: { $ne: id },
+      room: nextRoom,
+      date: nextDate,
+      $or: [
+        {
+          startTime: { $lte: nextStart },
+          endTime: { $gte: nextStart },
+        },
+        {
+          startTime: { $lte: nextEnd },
+          endTime: { $gte: nextEnd },
+        },
+      ],
+    });
+
+    if (overlapping) {
+      throw new Error("Khung giờ này đã có suất chiếu khác trong phòng.");
+    }
+
+    if (updateData.room && updateData.room !== showtime.room.toString()) {
+      const room = await Room.findById(updateData.room);
+      if (!room) throw new Error("Phòng chiếu mới không tồn tại.");
+      showtime.seatStatus = room.seats.map((seat) => ({
+        seatNumber: seat.seatNumber,
+        status: "Available",
+        lockedBy: null,
+        lockedAt: null,
+      }));
+    }
+
+    Object.assign(showtime, updateData);
+    return await showtime.save();
+  }
+
+  async deleteShowtime(id) {
+    return await Showtime.findByIdAndDelete(id);
   }
 }
 

@@ -56,6 +56,19 @@ class UserController {
     }
   }
 
+  async toggleStatus(req, res) {
+    try {
+      const { isActive } = req.body;
+      const user = await userService.toggleUserStatus(req.params.id, isActive);
+      if (!user) {
+        return res.status(404).json({ success: false, message: "Người dùng không tồn tại." });
+      }
+      res.status(200).json({ success: true, data: user });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async delete(req, res) {
     try {
       const user = await userService.deleteUser(req.params.id);

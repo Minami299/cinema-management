@@ -42,13 +42,6 @@ const STATS = [
     icon: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
   },
   {
-    label: "Số rạp",
-    value: "5",
-    change: "0",
-    color: "#2563eb",
-    icon: "M12 3L2 12h3v9h6v-5h2v5h6v-9h3L12 3z",
-  },
-  {
     label: "Doanh thu tuần",
     value: "₫48M",
     change: "+7%",
@@ -89,6 +82,110 @@ const UPCOMING_SHOWTIMES = [
     time: "16:15",
     seats: "45/150",
     status: "open",
+  },
+];
+
+const MOVIES_MANAGEMENT = [
+  {
+    title: "Avengers: Doomsday",
+    genre: "Action, Sci-Fi",
+    duration: 140,
+    releaseDate: "2026-05-08",
+    status: "Now Showing",
+  },
+  {
+    title: "Mission: Impossible 8",
+    genre: "Action, Thriller",
+    duration: 130,
+    releaseDate: "2026-06-12",
+    status: "Now Showing",
+  },
+  {
+    title: "The Batman Returns",
+    genre: "Action, Drama",
+    duration: 150,
+    releaseDate: "2026-04-28",
+    status: "Now Showing",
+  },
+  {
+    title: "Spider-Man: New World",
+    genre: "Adventure, Fantasy",
+    duration: 135,
+    releaseDate: "2026-07-01",
+    status: "Now Showing",
+  },
+];
+
+const SHOWTIME_MANAGEMENT = [
+  {
+    movie: "Avengers: Doomsday",
+    cinema: "CinemaHub Q1",
+    room: "Phòng 1",
+    date: "2026-07-15",
+    time: "09:00",
+    price: "140.000",
+    seats: "120/150",
+    status: "Mở bán",
+  },
+  {
+    movie: "Mission: Impossible 8",
+    cinema: "CinemaHub Q7",
+    room: "Phòng 3",
+    date: "2026-07-15",
+    time: "11:30",
+    price: "150.000",
+    seats: "98/120",
+    status: "Mở bán",
+  },
+  {
+    movie: "The Batman Returns",
+    cinema: "CinemaHub Thủ Đức",
+    room: "Phòng IMAX",
+    date: "2026-07-15",
+    time: "14:00",
+    price: "220.000",
+    seats: "200/200",
+    status: "Hết chỗ",
+  },
+  {
+    movie: "Spider-Man: New World",
+    cinema: "CinemaHub Q1",
+    room: "Phòng 2",
+    date: "2026-07-15",
+    time: "16:15",
+    price: "130.000",
+    seats: "45/150",
+    status: "Mở bán",
+  },
+];
+
+const CINEMA_ROOMS = [
+  {
+    cinema: "CinemaHub Q1",
+    city: "Hà Nội",
+    status: "Active",
+    rooms: [
+      { name: "Phòng 1", type: "2D", capacity: 150 },
+      { name: "Phòng 2", type: "3D", capacity: 150 },
+    ],
+  },
+  {
+    cinema: "CinemaHub Q7",
+    city: "Hồ Chí Minh",
+    status: "Active",
+    rooms: [
+      { name: "Phòng 3", type: "IMAX", capacity: 120 },
+      { name: "Phòng 4", type: "4DX", capacity: 100 },
+    ],
+  },
+  {
+    cinema: "CinemaHub Thủ Đức",
+    city: "Hồ Chí Minh",
+    status: "Maintenance",
+    rooms: [
+      { name: "Phòng IMAX", type: "IMAX", capacity: 200 },
+      { name: "Phòng 5", type: "2D", capacity: 130 },
+    ],
   },
 ];
 
@@ -298,32 +395,32 @@ const ManagerDashboard = () => {
         {/* MOVIES */}
         {activeNav === "movies" && (
           <div className="manager-content">
-            <div className="manager-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#e50914", marginBottom: 16 }}
-              >
-                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-                <line x1="7" y1="2" x2="7" y2="22" />
-                <line x1="17" y1="2" x2="17" y2="22" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <line x1="2" y1="7" x2="7" y2="7" />
-                <line x1="2" y1="17" x2="7" y2="17" />
-                <line x1="17" y1="17" x2="22" y2="17" />
-                <line x1="17" y1="7" x2="22" y2="7" />
-              </svg>
-              <div className="manager-placeholder-title">Quản lý phim</div>
-              <div className="manager-placeholder-desc">
-                Thêm, sửa, xóa và quản lý danh sách phim đang chiếu và sắp
-                chiếu.
-              </div>
+            <div className="manager-section-title">Danh sách phim</div>
+            <div className="manager-table-wrap">
+              <table className="manager-table">
+                <thead>
+                  <tr>
+                    <th>Tiêu đề</th>
+                    <th>Thể loại</th>
+                    <th>Thời lượng</th>
+                    <th>Ngày ra mắt</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {MOVIES_MANAGEMENT.map((movie) => (
+                    <tr key={movie.title}>
+                      <td>{movie.title}</td>
+                      <td>{movie.genre}</td>
+                      <td>{movie.duration} phút</td>
+                      <td>{new Date(movie.releaseDate).toLocaleDateString("vi-VN")}</td>
+                      <td>
+                        <span className="manager-pill">{movie.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -331,27 +428,40 @@ const ManagerDashboard = () => {
         {/* SHOWTIMES */}
         {activeNav === "showtimes" && (
           <div className="manager-content">
-            <div className="manager-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#7c3aed", marginBottom: 16 }}
-              >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-              <div className="manager-placeholder-title">
-                Quản lý suất chiếu
-              </div>
-              <div className="manager-placeholder-desc">
-                Lên lịch và quản lý suất chiếu cho từng phòng và rạp.
-              </div>
+            <div className="manager-section-title">Danh sách suất chiếu</div>
+            <div className="manager-table-wrap">
+              <table className="manager-table">
+                <thead>
+                  <tr>
+                    <th>Phim</th>
+                    <th>Rạp</th>
+                    <th>Phòng</th>
+                    <th>Ngày</th>
+                    <th>Giờ</th>
+                    <th>Giá vé</th>
+                    <th>Ghế</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SHOWTIME_MANAGEMENT.map((item) => (
+                    <tr key={`${item.movie}-${item.time}`}>
+                      <td>{item.movie}</td>
+                      <td>{item.cinema}</td>
+                      <td>{item.room}</td>
+                      <td>{new Date(item.date).toLocaleDateString("vi-VN")}</td>
+                      <td>{item.time}</td>
+                      <td>{item.price} đ</td>
+                      <td>{item.seats}</td>
+                      <td>
+                        <span className={`manager-table-status ${item.status === "Hết chỗ" ? "full" : "open"}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -359,27 +469,38 @@ const ManagerDashboard = () => {
         {/* CINEMAS */}
         {activeNav === "cinemas" && (
           <div className="manager-content">
-            <div className="manager-placeholder-panel">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "#2563eb", marginBottom: 16 }}
-              >
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                <polyline points="9 22 9 12 15 12 15 22" />
-              </svg>
-              <div className="manager-placeholder-title">
-                Quản lý rạp & phòng
-              </div>
-              <div className="manager-placeholder-desc">
-                Thêm và cấu hình rạp chiếu phim, phòng chiếu và sơ đồ ghế.
-              </div>
+            <div className="manager-section-title">Danh sách rạp & phòng</div>
+            <div className="manager-table-wrap">
+              <table className="manager-table">
+                <thead>
+                  <tr>
+                    <th>Rạp</th>
+                    <th>Thành phố</th>
+                    <th>Trạng thái</th>
+                    <th>Phòng</th>
+                    <th>Loại phòng</th>
+                    <th>Sức chứa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CINEMA_ROOMS.flatMap((cinema) =>
+                    cinema.rooms.map((room) => (
+                      <tr key={`${cinema.cinema}-${room.name}`}>
+                        <td>{cinema.cinema}</td>
+                        <td>{cinema.city}</td>
+                        <td>
+                          <span className={`manager-table-status ${cinema.status === "Active" ? "open" : "full"}`}>
+                            {cinema.status}
+                          </span>
+                        </td>
+                        <td>{room.name}</td>
+                        <td>{room.type}</td>
+                        <td>{room.capacity}</td>
+                      </tr>
+                    )),
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

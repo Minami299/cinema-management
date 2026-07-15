@@ -78,6 +78,85 @@ class BookingService {
       .sort({ createdAt: -1 });
   }
 
+  async getRevenueReport(filters = {}) {
+    const { startDate, endDate, cinemaId, roomId, movieId, status } = filters;
+    const query = {};
+    if (status) query.status = status;
+
+    const bookings = await Booking.find(query)
+      .populate({
+        path: "showtime",
+        populate: [
+          { path: "movie", select: "title" },
+          { path: "cinema", select: "name" },
+          { path: "room", select: "name" },
+        ],
+      })
+      .sort({ createdAt: -1 });
+
+    const filteredBookings = bookings.filter((booking) => {
+      const showtime = booking.showtime;
+      if (!showtime) return false;
+
+      let valid = true;
+      if (cinemaId && showtime.cinema?._id !== cinemaId) valid = false;
+      if (roomId && showtime.room?._id !== roomId) valid = false;
+      if (movieId && showtime.movie?._id !== movieId) valid = false;
+
+      if (startDate) {
+        const start = new Date(startDate);
+        if (showtime.date < start) valid = false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (showtime.date > end) valid = false;
+      }
+
+      return valid;
+    });
+
+    const totalRevenue = filteredBookings.reduce(
+      (sum, booking) => sum + (booking.totalAmount || 0),
+      0,
+    );
+    const totalOrders = filteredBookings.length;
+
+    const revenueByCinema = {};
+    const revenueByRoom = {};
+    const revenueByMovie = {};
+    const dailyRevenue = {};
+
+    filteredBookings.forEach((booking) => {
+      const showtime = booking.showtime;
+      const cinemaName = showtime.cinema?.name || "Unknown";
+      const roomName = showtime.room?.name || "Unknown";
+      const movieTitle = showtime.movie?.title || "Unknown";
+      const dateKey = showtime.date
+        ? new Date(showtime.date).toLocaleDateString("vi-VN")
+        : "Unknown";
+
+      revenueByCinema[cinemaName] =
+        (revenueByCinema[cinemaName] || 0) + (booking.totalAmount || 0);
+      revenueByRoom[roomName] =
+        (revenueByRoom[roomName] || 0) + (booking.totalAmount || 0);
+      revenueByMovie[movieTitle] =
+        (revenueByMovie[movieTitle] || 0) + (booking.totalAmount || 0);
+      dailyRevenue[dateKey] =
+        (dailyRevenue[dateKey] || 0) + (booking.totalAmount || 0);
+    });
+
+    return {
+      totalRevenue,
+      totalOrders,
+      revenueByCinema,
+      revenueByRoom,
+      revenueByMovie,
+      dailyRevenue,
+      bookings: filteredBookings,
+    };
+  }
+
   async updateBookingStatusInDB(id, updateData) {
     const { status, paymentStatus } = updateData;
     const updateFields = {};

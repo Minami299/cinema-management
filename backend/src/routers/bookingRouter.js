@@ -13,6 +13,12 @@ router.get(
   authorizeRoles("ADMIN", "MANAGER"),
   bookingController.getAllBookings,
 );
+router.get(
+  "/revenue",
+  authMiddleware,
+  authorizeRoles("ADMIN", "MANAGER"),
+  bookingController.getRevenueReport,
+);
 router.put(
   "/:id/status",
   authMiddleware,

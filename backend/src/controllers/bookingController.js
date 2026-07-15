@@ -32,6 +32,15 @@ class BookingController {
     }
   }
 
+  async getRevenueReport(req, res) {
+    try {
+      const report = await bookingService.getRevenueReport(req.query);
+      return res.status(200).json({ success: true, data: report });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async updateBookingStatus(req, res) {
     try {
       const updated = await bookingService.updateBookingStatusInDB(

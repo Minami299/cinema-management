@@ -58,6 +58,14 @@ class UserService {
     return await User.findByIdAndDelete(id);
   }
 
+  async toggleUserStatus(id, isActive) {
+    return await User.findByIdAndUpdate(
+      id,
+      { isActive: Boolean(isActive) },
+      { new: true, runValidators: true },
+    ).populate("role");
+  }
+
   async addFavoriteMovie(userId, movieId) {
     return await User.findByIdAndUpdate(
       userId,
