@@ -181,11 +181,36 @@ class BookingService {
 
   async updateBookingStatusInDB(id, updateData) {
     const { status, paymentStatus } = updateData;
+
+    // Nếu cập nhật thành Cancelled, thực hiện giải phóng ghế của suất chiếu tương ứng
+    if (status === "Cancelled") {
+      try {
+        const booking = await Booking.findById(id);
+        if (booking && booking.status !== "Cancelled") {
+          const showtime = await Showtime.findById(booking.showtime);
+          if (showtime) {
+            const bookedSeats = booking.tickets.map((t) => t.seatNumber);
+            showtime.seatStatus = showtime.seatStatus.map((seat) => {
+              if (bookedSeats.includes(seat.seatNumber)) {
+                seat.status = "Available";
+              }
+              return seat;
+            });
+            await showtime.save();
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi giải phóng ghế khi admin hủy vé:", err);
+      }
+    }
+
     const updateFields = {};
     if (status) updateFields.status = status;
     if (paymentStatus) updateFields["payment.status"] = paymentStatus;
     if (paymentStatus === "Completed")
       updateFields["payment.paidAt"] = new Date();
+    if (status === "Cancelled")
+      updateFields["payment.status"] = "Failed";
 
     const updated = await Booking.findByIdAndUpdate(
       id,
@@ -216,9 +241,88 @@ class BookingService {
           }
         })
         .catch((err) => console.error("Lỗi gửi mail khi duyệt vé:", err));
+    } else if (updated && updated.status === "Cancelled") {
+      // Gửi email thông báo hủy vé không đồng bộ
+      Booking.findById(updated._id)
+        .populate({
+          path: "showtime",
+          populate: [
+            { path: "movie", select: "title posterUrl" },
+            { path: "cinema", select: "name" },
+            { path: "room", select: "name" },
+          ],
+        })
+        .populate("foods.foodItem")
+        .populate("user", "name email")
+        .then((populatedBooking) => {
+          if (populatedBooking && populatedBooking.user?.email) {
+            emailService.sendBookingCancelledEmail(
+              populatedBooking.user.email,
+              populatedBooking.user,
+              populatedBooking
+            );
+          }
+        })
+        .catch((err) => console.error("Lỗi gửi mail khi hủy vé:", err));
     }
 
     return updated;
+  }
+
+  async cancelBookingByUser(bookingId, userId) {
+    const booking = await Booking.findById(bookingId);
+    if (!booking) throw new Error("Đơn đặt vé không tồn tại.");
+
+    // Kiểm tra quyền sở hữu
+    if (booking.user.toString() !== userId) {
+      throw new Error("Bạn không có quyền hủy đơn đặt vé này.");
+    }
+
+    if (booking.status === "Cancelled") {
+      throw new Error("Đơn đặt vé này đã bị hủy trước đó.");
+    }
+
+    // Giải phóng ghế
+    const showtime = await Showtime.findById(booking.showtime);
+    if (showtime) {
+      const bookedSeats = booking.tickets.map((t) => t.seatNumber);
+      showtime.seatStatus = showtime.seatStatus.map((seat) => {
+        if (bookedSeats.includes(seat.seatNumber)) {
+          seat.status = "Available";
+        }
+        return seat;
+      });
+      await showtime.save();
+    }
+
+    booking.status = "Cancelled";
+    booking.payment.status = "Failed";
+    await booking.save();
+
+    // Gửi email không đồng bộ
+    Booking.findById(booking._id)
+      .populate({
+        path: "showtime",
+        populate: [
+          { path: "movie", select: "title posterUrl" },
+          { path: "cinema", select: "name" },
+          { path: "room", select: "name" },
+        ],
+      })
+      .populate("foods.foodItem")
+      .populate("user", "name email")
+      .then((populatedBooking) => {
+        if (populatedBooking && populatedBooking.user?.email) {
+          emailService.sendBookingCancelledEmail(
+            populatedBooking.user.email,
+            populatedBooking.user,
+            populatedBooking
+          );
+        }
+      })
+      .catch((err) => console.error("Lỗi gửi mail khi người dùng hủy vé:", err));
+
+    return booking;
   }
 }
 
