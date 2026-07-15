@@ -71,6 +71,7 @@ const ProfilePage = () => {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   // Khởi tạo thông tin người dùng từ Auth Context
   useEffect(() => {
@@ -542,7 +543,7 @@ const ProfilePage = () => {
                         <span className="pp-booking-total">Tổng tiền: {totalVal}</span>
                         <button 
                           className="pp-view-ticket-btn"
-                          onClick={() => alert(`Chi tiết vé: \nPhim: ${movieTitle}\nRạp: ${cinemaName} - Phòng: ${roomName}\nSuất chiếu: ${showTime} ngày ${showDate}\nGhế: ${seatsStr}\nTổng tiền: ${totalVal}\nTrạng thái: ${statusText}`)}
+                          onClick={() => setSelectedTicket(b)}
                         >
                           Chi tiết vé
                         </button>
@@ -775,6 +776,92 @@ const ProfilePage = () => {
           </div>
         )}
       </main>
+      {selectedTicket && (
+        <div className="ticket-modal-overlay" onClick={() => setSelectedTicket(null)}>
+          <div className="ticket-card-wrapper" onClick={(e) => e.stopPropagation()}>
+            {/* Cuống vé trái */}
+            <div className="ticket-left">
+              <div className="ticket-movie-poster" style={{ backgroundImage: `url(${selectedTicket.showtime?.movie?.posterUrl || "https://via.placeholder.com/150x220?text=No+Poster"})` }}></div>
+              <div className="ticket-info">
+                <span className="ticket-badge">{
+                  selectedTicket.status === "Confirmed" ? "ĐÃ XÁC NHẬN" :
+                  selectedTicket.status === "Cancelled" ? "ĐÃ HỦY" : "CHỜ THANH TOÁN"
+                }</span>
+                <h2 className="ticket-title">{selectedTicket.showtime?.movie?.title}</h2>
+                <div className="ticket-grid">
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">RẠP</span>
+                    <span className="grid-val">{selectedTicket.showtime?.cinema?.name || "CinemaHub"}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">PHÒNG</span>
+                    <span className="grid-val">{selectedTicket.showtime?.room?.name}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">NGÀY CHIẾU</span>
+                    <span className="grid-val">{selectedTicket.showtime?.date ? new Date(selectedTicket.showtime.date).toLocaleDateString("vi-VN") : "N/A"}</span>
+                  </div>
+                  <div className="ticket-grid-item">
+                    <span className="grid-label">SUẤT CHIẾU</span>
+                    <span className="grid-val">{selectedTicket.showtime?.startTime}</span>
+                  </div>
+                  <div className="ticket-grid-item text-large">
+                    <span className="grid-label">GHẾ</span>
+                    <span className="grid-val highlight">{selectedTicket.tickets?.map(t => t.seatNumber).join(", ")}</span>
+                  </div>
+                  <div className="ticket-grid-item text-large">
+                    <span className="grid-label">TỔNG TIỀN</span>
+                    <span className="grid-val highlight">{(selectedTicket.totalAmount || 0).toLocaleString("vi-VN")}đ</span>
+                  </div>
+                </div>
+                {selectedTicket.foods && selectedTicket.foods.length > 0 && (
+                  <div className="ticket-foods-section">
+                    <span className="grid-label">ĐỒ ĂN KÈM:</span>
+                    <span className="foods-list">{selectedTicket.foods.map(f => `${f.foodItem?.name || "Combo"} (x${f.quantity})`).join(", ")}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Dải phân cách cuống vé răng cưa */}
+            <div className="ticket-divider">
+              <div className="divider-hole divider-hole-top"></div>
+              <div className="divider-dashed-line"></div>
+              <div className="divider-hole divider-hole-bottom"></div>
+            </div>
+
+            {/* Cuống vé phải (Soát vé) */}
+            <div className="ticket-right">
+              <div className="ticket-right-info">
+                <span className="ticket-sub-label">CinemaHub ticket</span>
+                <h3 className="ticket-sub-title">{selectedTicket.showtime?.movie?.title}</h3>
+                <div className="ticket-sub-grid">
+                  <div>
+                    <span>PHÒNG</span>
+                    <strong>{selectedTicket.showtime?.room?.name}</strong>
+                  </div>
+                  <div>
+                    <span>SUẤT</span>
+                    <strong>{selectedTicket.showtime?.startTime}</strong>
+                  </div>
+                  <div>
+                    <span>GHẾ</span>
+                    <strong>{selectedTicket.tickets?.map(t => t.seatNumber).join(", ")}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="ticket-qr-code">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`VE_${selectedTicket._id || selectedTicket.id}`)}`} 
+                  alt="Ticket QR Code" 
+                />
+                <span className="ticket-id">ID: {selectedTicket._id ? selectedTicket._id.substring(selectedTicket._id.length - 8).toUpperCase() : "N/A"}</span>
+              </div>
+            </div>
+            <button className="ticket-close-btn" onClick={() => setSelectedTicket(null)}>×</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
