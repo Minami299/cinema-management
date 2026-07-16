@@ -39,64 +39,6 @@ const normalizeList = (responseData) => {
   return [];
 };
 
-const STATS = [
-  {
-    label: "Phim đang chiếu",
-    value: "24",
-    change: "+3",
-    color: "#e50914",
-    icon: "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z",
-  },
-  {
-    label: "Suất chiếu hôm nay",
-    value: "86",
-    change: "+12",
-    color: "#7c3aed",
-    icon: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
-  },
-  {
-    label: "Doanh thu tuần",
-    value: "₫48M",
-    change: "+7%",
-    color: "#10b981",
-    icon: "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
-  },
-];
-
-const UPCOMING_SHOWTIMES = [
-  {
-    movie: "Avengers: Doomsday",
-    cinema: "CinemaHub Q1",
-    room: "Phòng 1",
-    time: "09:00",
-    seats: "120/150",
-    status: "open",
-  },
-  {
-    movie: "Mission: Impossible 8",
-    cinema: "CinemaHub Q7",
-    room: "Phòng 3",
-    time: "11:30",
-    seats: "98/120",
-    status: "open",
-  },
-  {
-    movie: "The Batman Returns",
-    cinema: "CinemaHub Thủ Đức",
-    room: "Phòng IMAX",
-    time: "14:00",
-    seats: "200/200",
-    status: "full",
-  },
-  {
-    movie: "Spider-Man: New World",
-    cinema: "CinemaHub Q1",
-    room: "Phòng 2",
-    time: "16:15",
-    seats: "45/150",
-    status: "open",
-  },
-];
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
@@ -114,6 +56,7 @@ const ManagerDashboard = () => {
   // State for pagination
   const [currentMoviePage, setCurrentMoviePage] = useState(1);
   const [currentShowtimePage, setCurrentShowtimePage] = useState(1);
+  const [movieSearchQuery, setMovieSearchQuery] = useState("");
   const moviesPerPage = 5;
   const showtimesPerPage = 5;
 
@@ -159,13 +102,78 @@ const ManagerDashboard = () => {
   };
 
   // Calculate pagination
-  const totalMoviePages = Math.ceil(movies.length / moviesPerPage);
+  const filteredMovies = movies.filter((movie) => {
+    const query = movieSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+
+    const genreText = Array.isArray(movie.genre)
+      ? movie.genre.join(" ")
+      : movie.genre || "";
+    const castText = Array.isArray(movie.cast)
+      ? movie.cast.join(" ")
+      : movie.cast || "";
+
+    return [movie.title, genreText, movie.director, castText, movie.status]
+      .filter(Boolean)
+      .some((field) => field.toLowerCase().includes(query));
+  });
+
+  const totalMoviePages = Math.ceil(filteredMovies.length / moviesPerPage);
   const startMovieIndex = (currentMoviePage - 1) * moviesPerPage;
-  const paginatedMovies = movies.slice(startMovieIndex, startMovieIndex + moviesPerPage);
+  const paginatedMovies = filteredMovies.slice(startMovieIndex, startMovieIndex + moviesPerPage);
 
   const totalShowtimePages = Math.ceil(showtimes.length / showtimesPerPage);
   const startShowtimeIndex = (currentShowtimePage - 1) * showtimesPerPage;
   const paginatedShowtimes = showtimes.slice(startShowtimeIndex, startShowtimeIndex + showtimesPerPage);
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayShowtimes = showtimes
+    .filter((showtime) => {
+      const showDate = showtime.date ? showtime.date.slice(0, 10) : "";
+      return showDate === todayIso;
+    })
+    .slice(0, 4);
+
+  const moviesShowingCount = movies.filter((movie) => movie.status === "Now Showing").length;
+  const todayShowtimeCount = showtimes.filter((showtime) => {
+    const showDate = showtime.date ? showtime.date.slice(0, 10) : "";
+    return showDate === todayIso;
+  }).length;
+  const weeklyRevenueValue = showtimes.reduce((sum, showtime) => {
+    if (!showtime.date || !showtime.ticketPrice) return sum;
+    const date = new Date(showtime.date);
+    const showDateKey = date.toISOString().slice(0, 10);
+    const diffDays = Math.floor((new Date(todayIso) - new Date(showDateKey)) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0 || diffDays >= 7) return sum;
+    const bookedSeats = showtime.seatStatus
+      ? showtime.seatStatus.filter((seat) => seat.status === "Booked").length
+      : 0;
+    return sum + showtime.ticketPrice * bookedSeats;
+  }, 0);
+
+  const stats = [
+    {
+      label: "Phim đang chiếu",
+      value: String(moviesShowingCount),
+      change: "+3",
+      color: "#e50914",
+      icon: "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z",
+    },
+    {
+      label: "Suất chiếu hôm nay",
+      value: String(todayShowtimeCount),
+      change: "+12",
+      color: "#7c3aed",
+      icon: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z",
+    },
+    {
+      label: "Doanh thu tuần",
+      value: `₫${weeklyRevenueValue.toLocaleString()}`,
+      change: "+7%",
+      color: "#10b981",
+      icon: "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
+    },
+  ];
 
   useEffect(() => {
     loadData();
@@ -419,7 +427,7 @@ const ManagerDashboard = () => {
         {activeNav === "overview" && (
           <div className="manager-content">
             <div className="manager-stats-grid">
-              {STATS.map((s, i) => (
+              {stats.map((s, i) => (
                 <div className="manager-stat-card" key={i}>
                   <div
                     className="manager-stat-icon"
@@ -451,30 +459,50 @@ const ManagerDashboard = () => {
                     <th>Phim</th>
                     <th>Rạp</th>
                     <th>Phòng</th>
+                    <th>Ngày</th>
                     <th>Giờ chiếu</th>
-                    <th>Ghế</th>
+                    <th>Ghế đã đặt</th>
                     <th>Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {UPCOMING_SHOWTIMES.map((s, i) => (
-                    <tr key={i}>
-                      <td style={{ color: "#e0e0f8", fontWeight: 500 }}>
-                        {s.movie}
-                      </td>
-                      <td style={{ color: "#8888aa" }}>{s.cinema}</td>
-                      <td style={{ color: "#8888aa" }}>{s.room}</td>
-                      <td>
-                        <span className="manager-time-badge">{s.time}</span>
-                      </td>
-                      <td style={{ color: "#c0c0e0" }}>{s.seats}</td>
-                      <td>
-                        <span className={`manager-table-status ${s.status}`}>
-                          {s.status === "open" ? "Mở bán" : "Hết chỗ"}
-                        </span>
+                  {todayShowtimes.length > 0 ? (
+                    todayShowtimes.map((showtime) => (
+                      <tr key={showtime._id}>
+                        <td style={{ color: "#e0e0f8", fontWeight: 500 }}>
+                          {showtime.movie?.title || "-"}
+                        </td>
+                        <td style={{ color: "#8888aa" }}>
+                          {showtime.cinema?.name || "-"}
+                        </td>
+                        <td style={{ color: "#8888aa" }}>
+                          {showtime.room?.name || "-"}
+                        </td>
+                        <td style={{ color: "#8888aa" }}>
+                          {showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "-"}
+                        </td>
+                        <td>
+                          <span className="manager-time-badge">{showtime.startTime || "-"}</span>
+                        </td>
+                        <td style={{ color: "#c0c0e0" }}>
+                          {showtime.seatStatus ? showtime.seatStatus.filter((seat) => seat.status === "Booked").length : 0}
+                        </td>
+                        <td>
+                          <span className="manager-table-status available">
+                            {showtime.seatStatus && showtime.seatStatus.every((seat) => seat.status === "Booked")
+                              ? "Hết chỗ"
+                              : "Mở bán"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: "center", color: "#8888aa", padding: "20px" }}>
+                        Không có suất chiếu hôm nay.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -484,24 +512,43 @@ const ManagerDashboard = () => {
         {/* MOVIES */}
         {activeNav === "movies" && (
           <div className="manager-content">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
               <div className="manager-section-title">Danh sách phim</div>
-              <button
-                onClick={() => {
-                  setSelectedMovie(null);
-                  setIsMovieFormOpen(true);
-                }}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#7c3aed",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                }}
-              >
-                Add Movie
-              </button>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", width: "100%", justifyContent: "space-between" }}>
+                <input
+                  value={movieSearchQuery}
+                  onChange={(e) => {
+                    setMovieSearchQuery(e.target.value);
+                    setCurrentMoviePage(1);
+                  }}
+                  placeholder="Tìm theo tên phim, thể loại, đạo diễn, diễn viên..."
+                  style={{
+                    flex: 1,
+                    minWidth: 240,
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    border: "1px solid #3d3d5a",
+                    backgroundColor: "#12122a",
+                    color: "#e0e0f8",
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    setSelectedMovie(null);
+                    setIsMovieFormOpen(true);
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#7c3aed",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add Movie
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -573,6 +620,7 @@ const ManagerDashboard = () => {
               showtime={selectedShowtime}
               movies={movies}
               rooms={rooms}
+              cinemas={cinemas}
               onClose={handleShowtimeFormClose}
               onSubmit={handleShowtimeSubmit}
             />

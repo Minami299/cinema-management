@@ -3,13 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 const initialForm = {
   movieId: "",
   roomId: "",
+  date: "",
   startTime: "",
   endTime: "",
-  price: "",
-  status: "Available",
+  ticketPrice: "",
 };
 
-const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, onSubmit }) => {
+const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, cinemas, onClose, onSubmit }) => {
   const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
 
@@ -19,12 +19,12 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
     if (!isOpen) return;
 
     setFormData({
-      movieId: showtime?.movieId || "",
-      roomId: showtime?.roomId || "",
-      startTime: showtime?.startTime ? showtime.startTime.slice(0, 16) : "",
-      endTime: showtime?.endTime ? showtime.endTime.slice(0, 16) : "",
-      price: showtime?.price || "",
-      status: showtime?.status || "Available",
+      movieId: showtime?.movie?._id || showtime?.movieId || "",
+      roomId: showtime?.room?._id || showtime?.roomId || "",
+      date: showtime?.date ? showtime.date.slice(0, 10) : "",
+      startTime: showtime?.startTime || "",
+      endTime: showtime?.endTime || "",
+      ticketPrice: showtime?.ticketPrice || "",
     });
 
     setErrors({});
@@ -37,14 +37,15 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
 
     if (!formData.movieId.trim()) nextErrors.movieId = "Movie is required";
     if (!formData.roomId.trim()) nextErrors.roomId = "Room is required";
+    if (!formData.date.trim()) nextErrors.date = "Date is required";
     if (!formData.startTime.trim()) nextErrors.startTime = "Start time is required";
     if (!formData.endTime.trim()) nextErrors.endTime = "End time is required";
-    if (!formData.price || Number(formData.price) <= 0)
-      nextErrors.price = "Price must be greater than 0";
+    if (!formData.ticketPrice || Number(formData.ticketPrice) <= 0)
+      nextErrors.ticketPrice = "Ticket price must be greater than 0";
 
     if (formData.startTime && formData.endTime) {
-      const start = new Date(formData.startTime);
-      const end = new Date(formData.endTime);
+      const start = formData.startTime;
+      const end = formData.endTime;
       if (end <= start) {
         nextErrors.endTime = "End time must be after start time";
       }
@@ -66,9 +67,17 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
 
     if (Object.keys(nextErrors).length > 0) return;
 
+    const selectedRoom = rooms.find((room) => room._id === formData.roomId);
+    const selectedCinema = selectedRoom?.cinema;
+    const cinemaId = selectedCinema?._id || selectedCinema || showtime?.cinema?._id || showtime?.cinema || "";
     const payload = {
-      ...formData,
-      price: Number(formData.price),
+      movie: formData.movieId,
+      room: formData.roomId,
+      cinema: cinemaId,
+      date: formData.date,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      ticketPrice: Number(formData.ticketPrice),
     };
 
     await onSubmit(payload);
@@ -162,10 +171,30 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
             </div>
 
             <div>
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Date</label>
+              <input
+                name="date"
+                type="date"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  backgroundColor: "#2d2d4a",
+                  border: "1px solid #3d3d5a",
+                  borderRadius: 4,
+                  color: "#e0e0f8",
+                  boxSizing: "border-box",
+                }}
+                value={formData.date}
+                onChange={handleChange}
+              />
+              {errors.date && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.date}</div>}
+            </div>
+
+            <div>
               <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Start Time</label>
               <input
                 name="startTime"
-                type="datetime-local"
+                type="time"
                 style={{
                   width: "100%",
                   padding: "8px 12px",
@@ -185,7 +214,7 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
               <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>End Time</label>
               <input
                 name="endTime"
-                type="datetime-local"
+                type="time"
                 style={{
                   width: "100%",
                   padding: "8px 12px",
@@ -202,9 +231,9 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
             </div>
 
             <div>
-              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Price (VND)</label>
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Ticket Price (VND)</label>
               <input
-                name="price"
+                name="ticketPrice"
                 type="number"
                 style={{
                   width: "100%",
@@ -215,16 +244,25 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
                   color: "#e0e0f8",
                   boxSizing: "border-box",
                 }}
-                value={formData.price}
+                value={formData.ticketPrice}
                 onChange={handleChange}
               />
-              {errors.price && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.price}</div>}
+              {errors.ticketPrice && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.ticketPrice}</div>}
             </div>
 
             <div>
-              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Status</label>
-              <select
-                name="status"
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Cinema</label>
+              <input
+                name="cinemaName"
+                type="text"
+                disabled
+                value={
+                  (() => {
+                    const currentRoom = rooms.find((room) => room._id === formData.roomId);
+                    const cinemaId = currentRoom?.cinema?._id || currentRoom?.cinema;
+                    return cinemas?.find((cinema) => cinema._id === cinemaId)?.name || "";
+                  })()
+                }
                 style={{
                   width: "100%",
                   padding: "8px 12px",
@@ -234,13 +272,8 @@ const ManagerShowtimeFormModal = ({ isOpen, showtime, movies, rooms, onClose, on
                   color: "#e0e0f8",
                   boxSizing: "border-box",
                 }}
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <option value="Available">Available</option>
-                <option value="Sold Out">Sold Out</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+                placeholder="Select a room to see cinema"
+              />
             </div>
           </div>
 

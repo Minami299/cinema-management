@@ -1,12 +1,14 @@
 const ManagerShowtimeTable = ({ showtimes = [], movies = [], rooms = [], onEdit, onDelete, currentPage = 1, totalPages = 1, onPageChange }) => {
-  const getMovieTitle = (movieId) => {
-    const movie = movies.find((m) => m._id === movieId);
-    return movie?.title || movieId;
+  const getMovieTitle = (showtime) => {
+    if (showtime.movie?.title) return showtime.movie.title;
+    const movie = movies.find((m) => m._id === showtime.movie || m._id === showtime.movieId);
+    return movie?.title || showtime.movie || showtime.movieId || "-";
   };
 
-  const getRoomName = (roomId) => {
-    const room = rooms.find((r) => r._id === roomId);
-    return room?.name || roomId;
+  const getRoomName = (showtime) => {
+    if (showtime.room?.name) return showtime.room.name;
+    const room = rooms.find((r) => r._id === showtime.room || r._id === showtime.roomId);
+    return room?.name || showtime.room || showtime.roomId || "-";
   };
 
   return (
@@ -16,7 +18,8 @@ const ManagerShowtimeTable = ({ showtimes = [], movies = [], rooms = [], onEdit,
           <tr>
             <th>Movie</th>
             <th>Room</th>
-            <th>Start Time</th>
+            <th>Date</th>
+            <th>Time</th>
             <th>Price</th>
             <th>Available Seats</th>
             <th>Status</th>
@@ -27,16 +30,25 @@ const ManagerShowtimeTable = ({ showtimes = [], movies = [], rooms = [], onEdit,
         <tbody>
           {showtimes.map((showtime) => (
             <tr key={showtime._id}>
-              <td style={{ color: "#e0e0f8", fontWeight: 500 }}>{getMovieTitle(showtime.movieId)}</td>
-              <td style={{ color: "#8888aa" }}>{getRoomName(showtime.roomId)}</td>
+              <td style={{ color: "#e0e0f8", fontWeight: 500 }}>{getMovieTitle(showtime)}</td>
+              <td style={{ color: "#8888aa" }}>{getRoomName(showtime)}</td>
               <td style={{ color: "#8888aa" }}>
-                {showtime.startTime ? new Date(showtime.startTime).toLocaleString("vi-VN") : "-"}
+                {showtime.date ? new Date(showtime.date).toLocaleDateString("vi-VN") : "-"}
               </td>
-              <td style={{ color: "#10b981" }}>{showtime.price ? `${showtime.price.toLocaleString()}đ` : "-"}</td>
-              <td style={{ color: "#c0c0e0" }}>{showtime.availableSeats || 0}</td>
+              <td style={{ color: "#8888aa" }}>
+                {showtime.startTime || "-"} - {showtime.endTime || "-"}
+              </td>
+              <td style={{ color: "#10b981" }}>{showtime.ticketPrice ? `${showtime.ticketPrice.toLocaleString()}đ` : "-"}</td>
+              <td style={{ color: "#c0c0e0" }}>
+                {(() => {
+                  const booked = showtime.seatStatus ? showtime.seatStatus.filter((seat) => seat.status === "Booked").length : 0;
+                  const total = showtime.seatStatus ? showtime.seatStatus.length : 0;
+                  return total > 0 ? total - booked : 0;
+                })()}
+              </td>
               <td>
-                <span style={{ padding: "4px 8px", borderRadius: 4, backgroundColor: "#7c3aed33", color: "#a78bfa", fontSize: 12 }}>
-                  {showtime.status || "-"}
+                <span style={{ padding: "4px 8px", borderRadius: 4, backgroundColor: showtime.seatStatus && showtime.seatStatus.every((seat) => seat.status === "Booked") ? "#dc262633" : "#7c3aed33", color: showtime.seatStatus && showtime.seatStatus.every((seat) => seat.status === "Booked") ? "#dc2626" : "#a78bfa", fontSize: 12 }}>
+                  {showtime.seatStatus && showtime.seatStatus.every((seat) => seat.status === "Booked") ? "Hết chỗ" : "Mở bán"}
                 </span>
               </td>
               <td>
