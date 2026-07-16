@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const initialForm = {
   posterUrl: "",
+  bannerUrl: "",
   title: "",
   synopsis: "",
   genre: "",
@@ -26,6 +27,7 @@ const ManagerMovieFormModal = ({ isOpen, movie, onClose, onSubmit }) => {
 
     setFormData({
       posterUrl: movie?.posterUrl || "",
+      bannerUrl: movie?.bannerUrl || "",
       title: movie?.title || "",
       synopsis: movie?.synopsis || "",
       genre: Array.isArray(movie?.genre)
@@ -51,6 +53,7 @@ const ManagerMovieFormModal = ({ isOpen, movie, onClose, onSubmit }) => {
   const validateForm = () => {
     const nextErrors = {};
 
+    if (!formData.posterUrl.trim()) nextErrors.posterUrl = "Poster URL is required";
     if (!formData.title.trim()) nextErrors.title = "Title is required";
     if (!formData.synopsis.trim()) nextErrors.synopsis = "Synopsis is required";
     if (!formData.genre.trim()) nextErrors.genre = "Genre is required";
@@ -138,6 +141,47 @@ const ManagerMovieFormModal = ({ isOpen, movie, onClose, onSubmit }) => {
         <form onSubmit={handleSubmit}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div>
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Poster URL</label>
+              <input
+                name="posterUrl"
+                className="manager-form-input"
+                value={formData.posterUrl}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  backgroundColor: "#2d2d4a",
+                  border: "1px solid #3d3d5a",
+                  borderRadius: 4,
+                  color: "#e0e0f8",
+                  boxSizing: "border-box",
+                }}
+                placeholder="https://..."
+              />
+              {errors.posterUrl && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.posterUrl}</div>}
+            </div>
+
+            <div>
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Banner URL</label>
+              <input
+                name="bannerUrl"
+                className="manager-form-input"
+                value={formData.bannerUrl}
+                onChange={handleChange}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  backgroundColor: "#2d2d4a",
+                  border: "1px solid #3d3d5a",
+                  borderRadius: 4,
+                  color: "#e0e0f8",
+                  boxSizing: "border-box",
+                }}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div>
               <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Title</label>
               <input
                 name="title"
@@ -214,6 +258,25 @@ const ManagerMovieFormModal = ({ isOpen, movie, onClose, onSubmit }) => {
                 onChange={handleChange}
               />
               {errors.director && <div style={{ color: "#dc2626", fontSize: 12, marginTop: 4 }}>{errors.director}</div>}
+            </div>
+
+            <div>
+              <label style={{ color: "#c0c0e0", fontSize: 12, display: "block", marginBottom: 6 }}>Trailer URL</label>
+              <input
+                name="trailerUrl"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  backgroundColor: "#2d2d4a",
+                  border: "1px solid #3d3d5a",
+                  borderRadius: 4,
+                  color: "#e0e0f8",
+                  boxSizing: "border-box",
+                }}
+                value={formData.trailerUrl}
+                onChange={handleChange}
+                placeholder="https://youtube.com/..."
+              />
             </div>
 
             <div>
